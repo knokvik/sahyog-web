@@ -1,5 +1,5 @@
 import { useSelector } from 'react-redux';
-import { useMe, useBackendHealth, useSosList, useDisastersList, useVolunteersList, useSheltersList } from '../api/hooks';
+import { useMe, useBackendHealth, useSosList, useDisastersList, useVolunteersList, useSheltersList, useServerStats } from '../api/hooks';
 import { selectProfile } from '../store/slices/authSlice';
 import styles from './Dashboard.module.css';
 
@@ -35,6 +35,141 @@ function StatusBadge({ status }) {
 function formatTime(dateStr) {
   if (!dateStr) return '—';
   return new Date(dateStr).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+function formatUptime(seconds) {
+  if (!seconds && seconds !== 0) return '—';
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
+function GaugeBar({ label, value, max, unit, color, icon }) {
+  const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
+  const barColor = pct > 85 ? '#ef4444' : pct > 60 ? '#f59e0b' : color || '#34b27b';
+  return (
+    <div className={styles.gaugeRow}>
+      <div className={styles.gaugeHeader}>
+        <span className={styles.gaugeLabel}>
+          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{icon}</span>
+          {label}
+        </span>
+        <span className={styles.gaugeValue}>{value}{unit} <span className={styles.gaugeMuted}>/ {max}{unit}</span></span>
+      </div>
+      <div className={styles.gaugeTrack}>
+        <div
+          className={styles.gaugeFill}
+          style={{ width: `${pct}%`, background: barColor, transition: 'width 0.6s ease' }}
+        />
+      </div>
+      <span className={styles.gaugePct} style={{ color: barColor }}>{pct.toFixed(1)}%</span>
+    </div>
+  );
+}
+
+function ServerStatsPanel() {
+  const { data: stats, isLoading, error } = useServerStats();
+
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardHeader}>
+        <h3 className={styles.sectionTitle}>
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>monitor_heart</span>
+          Server Performance
+        </h3>
+        <span className={`${styles.liveDot} pulse-green`} title="Auto-refreshing every 5s" />
+      </div>
+
+      {isLoading && !stats && (
+        <div className={styles.statusBody}>
+          <p className={styles.gaugeLabel} style={{ textAlign: 'center', padding: 16 }}>Loading metrics…</p>
+        </div>
+      )}
+
+      {error && !stats && (
+        <div className={styles.statusBody}>
+          <p style={{ color: '#ef4444', fontSize: 13, padding: 12 }}>Failed to load stats: {error.message}</p>
+        </div>
+      )}
+
+      {stats && (
+        <div className={styles.statusBody}>
+          {/* CPU */}
+          <GaugeBar
+            label="CPU Usage"
+            value={stats.cpu?.usagePercent || 0}
+            max={100}
+            unit="%"
+            icon="speed"
+            color="#3b82f6"
+          />
+
+          {/* Memory */}
+          <GaugeBar
+            label="Memory"
+            value={stats.memory?.usedMB || 0}
+            max={stats.memory?.totalMB || 1}
+            unit=" MB"
+            icon="memory"
+            color="#8b5cf6"
+          />
+
+          {/* Node Heap */}
+          <GaugeBar
+            label="Node Heap"
+            value={stats.process?.heapUsedMB || 0}
+            max={stats.process?.heapTotalMB || 1}
+            unit=" MB"
+            icon="data_object"
+            color="#06b6d4"
+          />
+
+          {/* Load Averages */}
+          <div className={styles.gaugeRow}>
+            <div className={styles.gaugeHeader}>
+              <span className={styles.gaugeLabel}>
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>equalizer</span>
+                Load Average
+              </span>
+            </div>
+            <div className={styles.loadAvgRow}>
+              <div className={styles.loadAvgItem}>
+                <span className={styles.loadAvgVal}>{stats.cpu?.loadAvg?.['1m'] ?? '—'}</span>
+                <span className={styles.loadAvgLabel}>1 min</span>
+              </div>
+              <div className={styles.loadAvgItem}>
+                <span className={styles.loadAvgVal}>{stats.cpu?.loadAvg?.['5m'] ?? '—'}</span>
+                <span className={styles.loadAvgLabel}>5 min</span>
+              </div>
+              <div className={styles.loadAvgItem}>
+                <span className={styles.loadAvgVal}>{stats.cpu?.loadAvg?.['15m'] ?? '—'}</span>
+                <span className={styles.loadAvgLabel}>15 min</span>
+              </div>
+            </div>
+          </div>
+
+          {/* System Info Row */}
+          <div className={styles.statusMeta} style={{ marginTop: 8 }}>
+            <div className={styles.statusItem}>
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>schedule</span>
+              <span>Uptime: {formatUptime(stats.system?.uptimeSeconds)}</span>
+            </div>
+            <div className={styles.statusItem}>
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{stats.db?.connected ? 'cloud_done' : 'cloud_off'}</span>
+              <span>DB: {stats.db?.connected ? `Online (${stats.db.totalUsers} users)` : 'Offline'}</span>
+            </div>
+            <div className={styles.statusItem}>
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>terminal</span>
+              <span>Node {stats.system?.nodeVersion}</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function Dashboard() {
@@ -152,31 +287,8 @@ export function Dashboard() {
 
         {/* Side Panel */}
         <div className={styles.sidePanel}>
-          {/* System Status */}
-          <div className={styles.card}>
-            <div className={styles.cardHeader}>
-              <h3 className={styles.sectionTitle}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>monitor_heart</span>
-                System Status
-              </h3>
-            </div>
-            <div className={styles.statusBody}>
-              <div className={styles.statusRow}>
-                <span className={`${styles.statusDot} pulse-green`} />
-                <span>All systems operational</span>
-              </div>
-              <div className={styles.statusMeta}>
-                <div className={styles.statusItem}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 14 }}>cloud_done</span>
-                  <span>Backend: Connected</span>
-                </div>
-                <div className={styles.statusItem}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 14 }}>database</span>
-                  <span>Database: Online</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Server Performance (Live) */}
+          <ServerStatsPanel />
 
           {/* Profile */}
           <div className={styles.card}>

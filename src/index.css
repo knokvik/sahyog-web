@@ -183,3 +183,9 @@ a:hover {
 .pulse-green {
   animation: pulseGreen 2s infinite;
 }
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

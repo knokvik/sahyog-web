@@ -59,4 +59,5 @@ export const apiPaths = {
   tasks: '/api/v1/tasks/pending',
   shelters: '/api/v1/shelters',
   missing: '/api/v1/missing',
+  serverStats: '/api/v1/server/stats',
 };

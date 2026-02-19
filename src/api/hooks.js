@@ -95,3 +95,15 @@ export function useUpdateSosStatus() {
     },
   });
 }
+
+export function useServerStats() {
+  const { getToken, isSignedIn } = useAuth();
+  return useQuery({
+    queryKey: ['server', 'stats'],
+    queryFn: () => apiRequest(apiPaths.serverStats, {}, getToken),
+    enabled: isSignedIn === true,
+    refetchInterval: 5000,
+    staleTime: 4000,
+    retry: 1,
+  });
+}
