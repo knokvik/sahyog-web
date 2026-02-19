@@ -1,7 +1,7 @@
 import { Outlet, NavLink } from 'react-router-dom';
 import { UserButton, useUser } from '@clerk/clerk-react';
 import { useDispatch, useSelector } from 'react-redux';
-import { toggleSidebar } from '../store/slices/uiSlice';
+import { toggleSidebar, toggleTheme, selectTheme } from '../store/slices/uiSlice';
 import { useMe } from '../api/hooks';
 import styles from './Layout.module.css';
 
@@ -17,6 +17,7 @@ const navItems = [
 export function Layout() {
   const dispatch = useDispatch();
   const sidebarOpen = useSelector((s) => s.ui.sidebarOpen);
+  const theme = useSelector(selectTheme);
   const { data: me } = useMe();
   const { user: clerkUser } = useUser();
   const role = me?.role ?? '—';
@@ -118,6 +119,17 @@ export function Layout() {
             </div>
           </div>
           <div className={styles.headerRight}>
+            <button
+              type="button"
+              className={styles.headerIcon}
+              onClick={() => dispatch(toggleTheme())}
+              aria-label="Toggle theme"
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+                {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+              </span>
+            </button>
             <button type="button" className={styles.headerIcon} aria-label="Notifications">
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>notifications</span>
               <span className={styles.notifDot} />

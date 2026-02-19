@@ -10,7 +10,8 @@ function StatusBadge({ status }) {
 
 function SeverityBadge({ severity }) {
   const map = { critical: 'critical', high: 'warning', medium: 'info', low: 'muted' };
-  const variant = map[severity?.toLowerCase()] || 'muted';
+  const s = String(severity ?? '').toLowerCase();
+  const variant = map[s] || 'muted';
   return <span className={`${styles.badge} ${styles[`badge_${variant}`]}`}>{severity ?? '—'}</span>;
 }
 

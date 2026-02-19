@@ -105,7 +105,7 @@
   color: var(--color-primary);
 }
 
-.navHighlight {}
+
 
 .navIcon {
   font-size: 20px;
@@ -364,5 +364,32 @@
 
   .searchBox {
     display: none;
+  }
+
+  .header {
+    padding: 0 16px;
+  }
+
+  .content {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 0 12px;
+    min-height: 52px;
+  }
+
+  .content {
+    padding: 12px;
+  }
+
+  .headerRight {
+    gap: 0;
+  }
+
+  .divider {
+    margin: 0 4px;
   }
 }

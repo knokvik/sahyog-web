@@ -201,37 +201,37 @@
 .badge_verified,
 .badge_available,
 .badge_found {
-  background: #dcfce7;
-  color: #16a34a;
+  background: var(--badge-green-bg);
+  color: var(--badge-green-fg);
 }
 
 .badge_warning,
 .badge_pending,
 .badge_contained {
-  background: #fff7ed;
-  color: #ea580c;
+  background: var(--badge-amber-bg);
+  color: var(--badge-amber-fg);
 }
 
 .badge_danger,
 .badge_active,
 .badge_critical,
 .badge_missing {
-  background: #fef2f2;
-  color: #dc2626;
+  background: var(--badge-red-bg);
+  color: var(--badge-red-fg);
 }
 
 .badge_info,
 .badge_in_progress {
-  background: #eff6ff;
-  color: #2563eb;
+  background: var(--badge-blue-bg);
+  color: var(--badge-blue-fg);
 }
 
 .badge_muted,
 .badge_cancelled,
 .badge_unknown,
 .badge_monitoring {
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--badge-muted-bg);
+  color: var(--badge-muted-fg);
 }
 
 /* Boolean indicator */
@@ -365,5 +365,31 @@
   .table th,
   .table td {
     padding: 10px 12px;
+  }
+
+  .filterRow {
+    gap: 4px;
+  }
+
+  .filterPill {
+    padding: 5px 12px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+
+  .table th,
+  .table td {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
+  .pageHeader {
+    margin-bottom: 14px;
+  }
+
+  .title {
+    font-size: 16px;
   }
 }

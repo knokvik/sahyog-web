@@ -57,6 +57,71 @@
   /* Transitions */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Skeleton shimmer (light) */
+  --shimmer-from: #f1f5f9;
+  --shimmer-via: #e2e8f0;
+
+  /* Badge colors (light) */
+  --badge-green-bg: #dcfce7;
+  --badge-green-fg: #16a34a;
+  --badge-amber-bg: #fff7ed;
+  --badge-amber-fg: #ea580c;
+  --badge-red-bg: #fef2f2;
+  --badge-red-fg: #dc2626;
+  --badge-blue-bg: #eff6ff;
+  --badge-blue-fg: #2563eb;
+  --badge-muted-bg: #f1f5f9;
+  --badge-muted-fg: #64748b;
+}
+
+/* ── Dark Theme ── */
+[data-theme="dark"] {
+  --color-primary: #3ecf8e;
+  --color-primary-light: #132f21;
+  --color-primary-dark: #3ecf8e;
+  --color-primary-10: rgba(62, 207, 142, 0.12);
+  --color-primary-20: rgba(62, 207, 142, 0.2);
+
+  --color-danger: #f87171;
+  --color-danger-light: #2d1515;
+  --color-danger-10: rgba(248, 113, 113, 0.12);
+  --color-warning: #fbbf24;
+  --color-warning-light: #2d2410;
+  --color-info: #60a5fa;
+  --color-info-light: #152030;
+  --color-info-10: rgba(96, 165, 250, 0.12);
+
+  --color-bg: #171717;
+  --color-surface: #1e1e1e;
+  --color-surface-hover: #2a2a2a;
+  --color-border: #2e2e2e;
+  --color-border-light: #262626;
+  --color-text-primary: #ededed;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted: #71717a;
+
+  --sidebar-bg: #1a1a1a;
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+
+  --shimmer-from: #262626;
+  --shimmer-via: #333333;
+
+  --badge-green-bg: #132f21;
+  --badge-green-fg: #4ade80;
+  --badge-amber-bg: #2d2410;
+  --badge-amber-fg: #fbbf24;
+  --badge-red-bg: #2d1515;
+  --badge-red-fg: #f87171;
+  --badge-blue-bg: #152030;
+  --badge-blue-fg: #60a5fa;
+  --badge-muted-bg: #262626;
+  --badge-muted-fg: #a1a1aa;
 }
 
 body {
@@ -105,6 +170,14 @@ a:hover {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: #444;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 /* Animations */
