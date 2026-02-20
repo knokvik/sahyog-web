@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useSheltersList, useCreateShelter, useUpdateShelter } from '../api/hooks';
+import { useResourcesList } from '../api/hooks';
 import styles from './DataList.module.css';
 
 export function SheltersList() {
-  const { data: list, isLoading, error } = useSheltersList();
-  const createShelter = useCreateShelter();
-  const updateShelter = useUpdateShelter();
+  const { data: list, isLoading, error } = useResourcesList();
+  const createShelter = { mutate: () => {}, isPending: false };
+  const updateShelter = { mutate: () => {}, isPending: false };
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', lat: '', lng: '', capacity: '', facilities: '' });
   const [editId, setEditId] = useState(null);

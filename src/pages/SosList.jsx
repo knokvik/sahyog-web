@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSosList, useVolunteersList, useCreateTask, useSosTasks } from '../api/hooks';
+import { useNeedsList, useUsersList, useCreateTask } from '../api/hooks';
 import styles from './DataList.module.css';
 
 const filters = ['All', 'pending', 'in_progress', 'resolved', 'cancelled'];
@@ -14,8 +14,8 @@ function formatTime(dateStr) {
 }
 
 function VolunteerActionsModal({ sosId, onClose }) {
-  const { data: volunteers } = useVolunteersList();
-  const { data: assignedTasks, isLoading: tasksLoading } = useSosTasks(sosId);
+  const { data: volunteers } = useUsersList();
+  const { data: assignedTasks, isLoading: tasksLoading } = { data: [], isLoading: false };
   const createTask = useCreateTask();
   
   const [selectedVolunteerId, setSelectedVolunteerId] = useState(null);
@@ -153,7 +153,7 @@ function VolunteerActionsModal({ sosId, onClose }) {
 }
 
 export function SosList() {
-  const { data: list, isLoading, error } = useSosList();
+  const { data: list, isLoading, error } = useNeedsList();
   const [activeFilter, setActiveFilter] = useState('All');
   const [assigningSos, setAssigningSos] = useState(null);
 

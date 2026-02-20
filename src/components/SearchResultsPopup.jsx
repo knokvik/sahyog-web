@@ -16,14 +16,16 @@ export function SearchResultsPopup({ query, isVisible, onClose }) {
     onClose();
     switch (type) {
       case 'user':
-      case 'volunteer':
         navigate('/users');
+        break;
+      case 'need':
+        navigate('/needs');
         break;
       case 'disaster':
         navigate('/disasters');
         break;
-      case 'shelter':
-        navigate('/shelters');
+      case 'resource':
+        navigate('/resources');
         break;
       case 'missing_person':
         navigate('/missing');
@@ -34,7 +36,7 @@ export function SearchResultsPopup({ query, isVisible, onClose }) {
   };
 
   const results = data?.data || {};
-  const { users, volunteers, disasters, shelters, missing_persons } = results;
+  const { users, needs, disasters, resources, missing_persons } = results;
   const totalFound = data?.meta?.totalFound || 0;
 
   return (
@@ -73,17 +75,17 @@ export function SearchResultsPopup({ query, isVisible, onClose }) {
             </div>
           )}
 
-          {volunteers?.length > 0 && (
+          {needs?.length > 0 && (
             <div className={styles.categoryGroup}>
               <h4 className={styles.categoryHeader}>
-                <span className="material-symbols-outlined">group</span>
-                Volunteers
+                <span className="material-symbols-outlined">sos</span>
+                Needs / Requests
               </h4>
               <ul className={styles.resultList}>
-                {volunteers.map(v => (
-                  <li key={v.id} className={styles.resultItem} onClick={() => handleResultClick(v, 'volunteer')}>
-                    <span className={styles.resultMain}>{v.name}</span>
-                    <span className={styles.resultSub}>{v.skills?.join(', ') || 'No specific skills listed'}</span>
+                {needs.map(n => (
+                  <li key={n.id} className={styles.resultItem} onClick={() => handleResultClick(n, 'need')}>
+                    <span className={styles.resultMain}>{n.request_code || n.name}</span>
+                    <span className={styles.resultSub}>{n.type} - Urgency: {n.urgency}</span>
                   </li>
                 ))}
               </ul>
@@ -107,17 +109,17 @@ export function SearchResultsPopup({ query, isVisible, onClose }) {
             </div>
           )}
 
-          {shelters?.length > 0 && (
+          {resources?.length > 0 && (
             <div className={styles.categoryGroup}>
               <h4 className={styles.categoryHeader}>
-                <span className="material-symbols-outlined">night_shelter</span>
-                Shelters
+                <span className="material-symbols-outlined">inventory_2</span>
+                Resources
               </h4>
               <ul className={styles.resultList}>
-                {shelters.map(s => (
-                  <li key={s.id} className={styles.resultItem} onClick={() => handleResultClick(s, 'shelter')}>
-                    <span className={styles.resultMain}>{s.name}</span>
-                    <span className={styles.resultSub}>Occupancy: {s.current_occupancy}/{s.capacity}</span>
+                {resources.map(r => (
+                  <li key={r.id} className={styles.resultItem} onClick={() => handleResultClick(r, 'resource')}>
+                    <span className={styles.resultMain}>{r.type}</span>
+                    <span className={styles.resultSub}>Qty: {r.quantity} - Status: {r.status}</span>
                   </li>
                 ))}
               </ul>

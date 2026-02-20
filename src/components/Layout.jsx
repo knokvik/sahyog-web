@@ -9,10 +9,9 @@ import styles from './Layout.module.css';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: 'dashboard' },
-  { to: '/sos', label: 'SOS Alerts', icon: 'sos', highlight: true },
+  { to: '/needs', label: 'Needs / SOS', icon: 'sos', highlight: true },
   { to: '/disasters', label: 'Disaster Zones', icon: 'flood' },
-  { to: '/volunteers', label: 'Volunteers', icon: 'group' },
-  { to: '/shelters', label: 'Shelters', icon: 'night_shelter' },
+  { to: '/resources', label: 'Resources', icon: 'inventory_2' },
   { to: '/missing', label: 'Missing Persons', icon: 'person_search' },
   { to: '/users', label: 'User Management', icon: 'admin_panel_settings' },
   { to: '/server', label: 'Server Monitor', icon: 'monitor_heart' },
@@ -46,11 +45,10 @@ export function Layout() {
     : 'Admin User';
 
   const roleLabelMap = {
-    'org:admin': 'System Admin',
-    'org:volunteer_head': 'Volunteer Head',
-    'org:volunteer': 'Volunteer',
-    'org:member': 'Member',
-    'org:user': 'User',
+    'admin': 'System Admin',
+    'coordinator': 'Coordinator',
+    'volunteer': 'Volunteer',
+    'organization': 'Organization',
   };
 
   return (

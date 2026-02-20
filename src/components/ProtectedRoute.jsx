@@ -27,7 +27,7 @@ function AdminGate({ children }) {
   }
 
   const role = me?.role;
-  if (role !== 'org:admin') {
+  if (role !== 'admin') {
     return (
       <div style={gateStyles.center}>
         <span className="material-symbols-outlined" style={{ fontSize: 56, color: '#ef4444' }}>shield_lock</span>
@@ -36,7 +36,7 @@ function AdminGate({ children }) {
           This panel is restricted to <strong>administrators only</strong>.
         </p>
         <p style={gateStyles.roleInfo}>
-          Your current role: <code style={gateStyles.roleCode}>{role || 'org:user'}</code>
+          Your current role: <code style={gateStyles.roleCode}>{role || 'user'}</code>
         </p>
         <p style={gateStyles.hint}>
           Contact an administrator to request elevated privileges.

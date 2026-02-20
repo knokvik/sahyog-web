@@ -5,7 +5,6 @@ import { useDispatch } from 'react-redux';
 import { apiRequest, apiPaths, pingBackend } from '../lib/api';
 import { setProfile, clearProfile } from '../store/slices/authSlice';
 
-/** Check if backend is reachable (no auth). Use to debug "can frontend reach backend?". */
 export function useBackendHealth() {
   return useQuery({
     queryKey: ['backend', 'health'],
@@ -23,7 +22,7 @@ export function useMe() {
     queryKey: ['users', 'me'],
     queryFn: async () => {
       const token = await getToken({ skipCache: false });
-      if (!token) throw new Error('No session token. Complete sign-in and, if you see "Choose organization", select one.');
+      if (!token) throw new Error('No session token.');
       return apiRequest(apiPaths.me, {}, () => Promise.resolve(token));
     },
     enabled: isLoaded === true && isSignedIn === true,
@@ -39,21 +38,27 @@ export function useMe() {
   return query;
 }
 
-export function useSosList() {
+export function useNeedsList() {
   const { getToken, isSignedIn } = useAuth();
   return useQuery({
-    queryKey: ['sos', 'list'],
-    queryFn: () => apiRequest(apiPaths.sos, {}, getToken),
+    queryKey: ['needs', 'list'],
+    queryFn: () => apiRequest(apiPaths.needs, {}, getToken),
     enabled: isSignedIn === true,
   });
 }
 
-export function useSosTasks(sosId) {
-  const { getToken, isSignedIn } = useAuth();
-  return useQuery({
-    queryKey: ['sos', sosId, 'tasks'],
-    queryFn: () => apiRequest(apiPaths.sosTasks(sosId), {}, getToken),
-    enabled: isSignedIn === true && !!sosId,
+export function useUpdateNeedStatus() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, action, volunteer_id }) => {
+      // action = 'resolve' or 'assign'
+      const path = action === 'assign' ? apiPaths.needAssign(id) : apiPaths.needResolve(id);
+      return apiRequest(path, { method: 'PATCH', body: JSON.stringify({ volunteer_id }) }, getToken);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['needs'] });
+    },
   });
 }
 
@@ -63,87 +68,6 @@ export function useDisastersList() {
     queryKey: ['disasters', 'list'],
     queryFn: () => apiRequest(apiPaths.disasters, {}, getToken),
     enabled: isSignedIn === true,
-  });
-}
-
-export function useDisasterTasks(disasterId) {
-  const { getToken, isSignedIn } = useAuth();
-  return useQuery({
-    queryKey: ['disasters', disasterId, 'tasks'],
-    queryFn: () => apiRequest(apiPaths.disasterTasks(disasterId), {}, getToken),
-    enabled: isSignedIn === true && !!disasterId,
-  });
-}
-
-export function useVolunteersList() {
-  const { getToken, isSignedIn } = useAuth();
-  return useQuery({
-    queryKey: ['volunteers', 'list'],
-    queryFn: () => apiRequest(apiPaths.volunteers, {}, getToken),
-    enabled: isSignedIn === true,
-  });
-}
-
-export function useSheltersList() {
-  const { getToken, isSignedIn } = useAuth();
-  return useQuery({
-    queryKey: ['shelters', 'list'],
-    queryFn: () => apiRequest(apiPaths.shelters, {}, getToken),
-    enabled: isSignedIn === true,
-  });
-}
-
-export function useMissingList() {
-  const { getToken, isSignedIn } = useAuth();
-  return useQuery({
-    queryKey: ['missing', 'list'],
-    queryFn: () => apiRequest(apiPaths.missing, {}, getToken),
-    enabled: isSignedIn === true,
-  });
-}
-
-export function useUpdateSosStatus() {
-  const { getToken } = useAuth();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, status }) =>
-      apiRequest(apiPaths.sosStatus(id), { method: 'PATCH', body: JSON.stringify({ status }) }, getToken),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sos'] });
-    },
-  });
-}
-
-export function useServerStats() {
-  const { getToken, isSignedIn } = useAuth();
-  return useQuery({
-    queryKey: ['server', 'stats'],
-    queryFn: () => apiRequest(apiPaths.serverStats, {}, getToken),
-    enabled: isSignedIn === true,
-    refetchInterval: 5000,
-    staleTime: 4000,
-    retry: 1,
-  });
-}
-
-export function useUsersList() {
-  const { getToken, isSignedIn } = useAuth();
-  return useQuery({
-    queryKey: ['users', 'list'],
-    queryFn: () => apiRequest(apiPaths.users, {}, getToken),
-    enabled: isSignedIn === true,
-  });
-}
-
-export function useUpdateUserRole() {
-  const { getToken } = useAuth();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ uid, role }) =>
-      apiRequest(apiPaths.userRole(uid), { method: 'PUT', body: JSON.stringify({ role }) }, getToken),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-    },
   });
 }
 
@@ -183,39 +107,39 @@ export function useResolveDisaster() {
   });
 }
 
-export function useVerifyVolunteer() {
-  const { getToken } = useAuth();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, isVerified }) =>
-      apiRequest(apiPaths.volunteerVerify(id), { method: 'PATCH', body: JSON.stringify({ isVerified }) }, getToken),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['volunteers'] });
-    },
+export function useDisasterTasks(disasterId) {
+  const { getToken, isSignedIn } = useAuth();
+  return useQuery({
+    queryKey: ['disasters', disasterId, 'tasks'],
+    queryFn: () => apiRequest(apiPaths.disasterTasks(disasterId), {}, getToken),
+    enabled: isSignedIn === true && !!disasterId,
   });
 }
 
-export function useCreateShelter() {
-  const { getToken } = useAuth();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data) =>
-      apiRequest(apiPaths.createShelter, { method: 'POST', body: JSON.stringify(data) }, getToken),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['shelters'] });
-    },
+export function useZonesList(disasterId) {
+  const { getToken, isSignedIn } = useAuth();
+  return useQuery({
+    queryKey: ['zones', 'list', disasterId],
+    queryFn: () => apiRequest(apiPaths.zones + (disasterId ? `?disaster_id=${disasterId}` : ''), {}, getToken),
+    enabled: isSignedIn === true,
   });
 }
 
-export function useUpdateShelter() {
-  const { getToken } = useAuth();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, ...data }) =>
-      apiRequest(apiPaths.updateShelter(id), { method: 'PATCH', body: JSON.stringify(data) }, getToken),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['shelters'] });
-    },
+export function useResourcesList() {
+  const { getToken, isSignedIn } = useAuth();
+  return useQuery({
+    queryKey: ['resources', 'list'],
+    queryFn: () => apiRequest(apiPaths.resources, {}, getToken),
+    enabled: isSignedIn === true,
+  });
+}
+
+export function useMissingList() {
+  const { getToken, isSignedIn } = useAuth();
+  return useQuery({
+    queryKey: ['missing', 'list'],
+    queryFn: () => apiRequest(apiPaths.missing, {}, getToken),
+    enabled: isSignedIn === true,
   });
 }
 
@@ -231,6 +155,40 @@ export function useMarkFound() {
   });
 }
 
+export function useServerStats() {
+  const { getToken, isSignedIn } = useAuth();
+  return useQuery({
+    queryKey: ['server', 'stats'],
+    queryFn: () => apiRequest(apiPaths.serverStats, {}, getToken),
+    enabled: isSignedIn === true,
+    refetchInterval: 5000,
+    staleTime: 4000,
+    retry: 1,
+  });
+}
+
+export function useUsersList() {
+  const { getToken, isSignedIn } = useAuth();
+  // Using users list instead of volunteers. Volunteers can be filtered on the frontend.
+  return useQuery({
+    queryKey: ['users', 'list'],
+    queryFn: () => apiRequest(apiPaths.users, {}, getToken),
+    enabled: isSignedIn === true,
+  });
+}
+
+export function useUpdateUserRole() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ uid, role }) =>
+      apiRequest(apiPaths.userRole(uid), { method: 'PUT', body: JSON.stringify({ role }) }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+  });
+}
+
 export function useCreateTask() {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
@@ -238,9 +196,8 @@ export function useCreateTask() {
     mutationFn: (data) =>
       apiRequest(apiPaths.createTask, { method: 'POST', body: JSON.stringify(data) }, getToken),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sos'] });
+      queryClient.invalidateQueries({ queryKey: ['needs'] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
   });
 }
-

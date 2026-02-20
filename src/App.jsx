@@ -87,8 +87,10 @@ function AppRoutes() {
         }
       >
         <Route index element={<Dashboard />} />
+        <Route path="needs" element={<SosList />} />
         <Route path="sos" element={<SosList />} />
         <Route path="disasters" element={<DisastersList />} />
+        <Route path="resources" element={<SheltersList />} />
         <Route path="volunteers" element={<VolunteersList />} />
         <Route path="shelters" element={<SheltersList />} />
         <Route path="missing" element={<MissingList />} />

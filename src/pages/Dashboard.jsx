@@ -1,5 +1,5 @@
 import { useSelector } from 'react-redux';
-import { useMe, useBackendHealth, useSosList, useDisastersList, useVolunteersList, useSheltersList, useServerStats } from '../api/hooks';
+import { useMe, useBackendHealth, useNeedsList, useDisastersList, useUsersList, useResourcesList, useServerStats } from '../api/hooks';
 import { selectProfile } from '../store/slices/authSlice';
 import styles from './Dashboard.module.css';
 
@@ -175,20 +175,20 @@ function ServerStatsPanel() {
 export function Dashboard() {
   const { data: me, isLoading, error } = useMe();
   const { data: backendReachable, isLoading: healthLoading } = useBackendHealth();
-  const { data: sosList } = useSosList();
+  const { data: needsList } = useNeedsList();
   const { data: disastersList } = useDisastersList();
-  const { data: volunteersList } = useVolunteersList();
-  const { data: sheltersList } = useSheltersList();
+  const { data: usersList } = useUsersList();
+  const { data: resourcesList } = useResourcesList();
   const profile = useSelector(selectProfile);
 
-  const sosArr = Array.isArray(sosList) ? sosList : [];
+  const needsArr = Array.isArray(needsList) ? needsList : [];
   const disArr = Array.isArray(disastersList) ? disastersList : [];
-  const volArr = Array.isArray(volunteersList) ? volunteersList : [];
-  const shelArr = Array.isArray(sheltersList) ? sheltersList : [];
+  const usersArr = Array.isArray(usersList) ? usersList : [];
+  const resArr = Array.isArray(resourcesList) ? resourcesList : [];
 
-  const activeSos = sosArr.filter(s => s.status !== 'resolved' && s.status !== 'cancelled').length;
+  const activeNeeds = needsArr.filter(s => s.status !== 'resolved' && s.status !== 'cancelled').length;
   const activeDisasters = disArr.filter(d => d.status === 'active').length;
-  const availableVol = volArr.filter(v => v.is_available).length;
+  const availableVol = usersArr.filter(v => v.role === 'volunteer').length;
 
   if (isLoading) {
     return (
@@ -229,10 +229,10 @@ export function Dashboard() {
     <div className={styles.page}>
       {/* Stats */}
       <div className={styles.statsGrid}>
-        <StatCard icon="sos" label="Active SOS" value={activeSos} sub={`${sosArr.length} total`} accent="danger" />
+        <StatCard icon="sos" label="Active Needs" value={activeNeeds} sub={`${needsArr.length} total`} accent="danger" />
         <StatCard icon="flood" label="Active Zones" value={activeDisasters} sub={activeDisasters > 0 ? 'Monitoring' : 'All clear'} accent="warning" />
-        <StatCard icon="group" label="Volunteers" value={volArr.length} sub={`${availableVol} available`} accent="primary" />
-        <StatCard icon="night_shelter" label="Shelters" value={shelArr.length} sub="Registered locations" accent="info" />
+        <StatCard icon="group" label="Volunteers" value={usersArr.length} sub={`${availableVol} volunteers`} accent="primary" />
+        <StatCard icon="night_shelter" label="Resources" value={resArr.length} sub="Registered resources" accent="info" />
       </div>
 
       {/* Main Grid */}
@@ -242,9 +242,9 @@ export function Dashboard() {
           <div className={styles.cardHeader}>
             <h3 className={styles.sectionTitle}>
               <span className="material-symbols-outlined" style={{ fontSize: 16 }}>sos</span>
-              Recent SOS Alerts
+              Recent Needs
             </h3>
-            <a href="/sos" className={styles.viewAll}>View All →</a>
+            <a href="/needs" className={styles.viewAll}>View All →</a>
           </div>
           <div className={styles.tableWrap}>
             <table className={styles.table}>
@@ -253,29 +253,25 @@ export function Dashboard() {
                   <th>ID</th>
                   <th>Status</th>
                   <th>Type</th>
-                  <th>Priority</th>
+                  <th>Urgency</th>
                   <th>Time</th>
                 </tr>
               </thead>
               <tbody>
-                {sosArr.length === 0 ? (
+                {needsArr.length === 0 ? (
                   <tr>
                     <td colSpan={5} className={styles.emptyRow}>
                       <span className="material-symbols-outlined" style={{ fontSize: 32, opacity: 0.3 }}>inbox</span>
-                      <p>No SOS reports yet</p>
+                      <p>No Needs reported yet</p>
                     </td>
                   </tr>
                 ) : (
-                  sosArr.slice(0, 5).map(row => (
+                  needsArr.slice(0, 5).map(row => (
                     <tr key={row.id}>
                       <td><code className={styles.mono}>#{row.id?.slice(0, 8)}</code></td>
                       <td><StatusBadge status={row.status} /></td>
                       <td>{row.type ?? '—'}</td>
-                      <td>
-                        <div className={styles.priorityBar}>
-                          <div className={styles.priorityFill} style={{ width: `${Math.min((row.priority_score || 0) * 10, 100)}%` }} />
-                        </div>
-                      </td>
+                      <td>{row.urgency ?? 'medium'}</td>
                       <td className={styles.timeCell}>{formatTime(row.created_at)}</td>
                     </tr>
                   ))
@@ -317,21 +313,21 @@ export function Dashboard() {
               </h3>
             </div>
             <div className={styles.quickActions}>
-              <a href="/sos" className={styles.quickBtn}>
+              <a href="/needs" className={styles.quickBtn}>
                 <span className="material-symbols-outlined">sos</span>
-                <span>SOS Alerts</span>
+                <span>Needs / SOS</span>
               </a>
               <a href="/disasters" className={styles.quickBtn}>
                 <span className="material-symbols-outlined">flood</span>
                 <span>Disasters</span>
               </a>
-              <a href="/volunteers" className={styles.quickBtn}>
+              <a href="/users" className={styles.quickBtn}>
                 <span className="material-symbols-outlined">group</span>
-                <span>Volunteers</span>
+                <span>Users</span>
               </a>
-              <a href="/shelters" className={styles.quickBtn}>
+              <a href="/resources" className={styles.quickBtn}>
                 <span className="material-symbols-outlined">night_shelter</span>
-                <span>Shelters</span>
+                <span>Resources</span>
               </a>
             </div>
           </div>

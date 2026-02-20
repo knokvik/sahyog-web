@@ -3,17 +3,17 @@ import { useUsersList, useUpdateUserRole } from '../api/hooks';
 import styles from './DataList.module.css';
 
 const roleOptions = [
-    { value: 'org:user', label: 'Citizen' },
-    { value: 'org:volunteer', label: 'Volunteer' },
-    { value: 'org:volunteer_head', label: 'Volunteer Head' },
-    { value: 'org:admin', label: 'Admin' },
+    { value: 'volunteer', label: 'Volunteer' },
+    { value: 'coordinator', label: 'Coordinator' },
+    { value: 'admin', label: 'Admin' },
+    { value: 'organization', label: 'Organization' },
 ];
 
 const roleBadgeMap = {
     admin: 'danger',
-    volunteer_head: 'warning',
+    coordinator: 'warning',
     volunteer: 'info',
-    citizen: 'muted',
+    organization: 'primary',
 };
 
 function RoleBadge({ role }) {
@@ -38,10 +38,10 @@ export function UsersList() {
     const rows = filter === 'All' ? allRows : allRows.filter(r => r.role === filter);
 
     const roleToOrg = {
-        citizen: 'org:user',
-        volunteer: 'org:volunteer',
-        volunteer_head: 'org:volunteer_head',
-        admin: 'org:admin',
+        volunteer: 'volunteer',
+        coordinator: 'coordinator',
+        admin: 'admin',
+        organization: 'organization'
     };
 
     return (
@@ -57,7 +57,7 @@ export function UsersList() {
             </div>
 
             <div className={styles.filterRow}>
-                {['All', 'admin', 'volunteer_head', 'volunteer', 'citizen'].map(f => (
+                {['All', 'admin', 'coordinator', 'volunteer', 'organization'].map(f => (
                     <button
                         key={f}
                         className={`${styles.filterPill} ${filter === f ? styles.filterPillActive : ''}`}
@@ -107,7 +107,7 @@ export function UsersList() {
                                     <td className={styles.timeCell}>{formatTime(row.updated_at)}</td>
                                     <td>
                                         <select
-                                            value={roleToOrg[row.role] || 'org:user'}
+                                            value={roleToOrg[row.role] || 'volunteer'}
                                             onChange={(e) => updateRole.mutate({ uid: row.clerk_user_id, role: e.target.value })}
                                             disabled={updateRole.isPending}
                                             className={styles.select}

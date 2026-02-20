@@ -3,7 +3,6 @@
  * Uses Clerk session token for Authorization. getToken must be passed from Clerk useAuth().
  */
 
-// Leave empty in dev to use Vite proxy (/api -> backend). Set in production to full backend URL.
 const getBaseUrl = () => import.meta.env.VITE_API_URL ?? '';
 
 export async function apiRequest(path, options = {}, getToken) {
@@ -37,7 +36,6 @@ export async function apiRequest(path, options = {}, getToken) {
   return data;
 }
 
-/** No-auth request to check if backend is reachable (e.g. via Vite proxy). */
 export async function pingBackend() {
   const base = getBaseUrl();
   const url = base ? `${base.replace(/\/$/, '')}${apiPaths.health}` : apiPaths.health;
@@ -56,25 +54,30 @@ export const apiPaths = {
   me: '/api/users/me',
   users: '/api/users',
   userRole: (uid) => `/api/users/${uid}/role`,
-  sos: '/api/v1/sos',
-  sosById: (id) => `/api/v1/sos/${id}`,
-  sosStatus: (id) => `/api/v1/sos/${id}/status`,
-  sosTasks: (id) => `/api/v1/sos/${id}/tasks`,
+
+  needs: '/api/v1/needs',
+  needAssign: (id) => `/api/v1/needs/${id}/assign`,
+  needResolve: (id) => `/api/v1/needs/${id}/resolve`,
+
   disasters: '/api/v1/disasters',
   disasterById: (id) => `/api/v1/disasters/${id}`,
   disasterActivate: (id) => `/api/v1/disasters/${id}/activate`,
   disasterResolve: (id) => `/api/v1/disasters/${id}/resolve`,
   disasterTasks: (id) => `/api/v1/disasters/${id}/tasks`,
   disasterStats: (id) => `/api/v1/disasters/${id}/stats`,
-  volunteers: '/api/v1/volunteers',
-  volunteerVerify: (id) => `/api/v1/volunteers/${id}/verify`,
+
+  zones: '/api/v1/zones',
+  zoneAssign: (id) => `/api/v1/zones/${id}/coordinator`,
+
   tasks: '/api/v1/tasks/pending',
   createTask: '/api/v1/tasks',
-  shelters: '/api/v1/shelters',
-  createShelter: '/api/v1/shelters',
-  updateShelter: (id) => `/api/v1/shelters/${id}`,
+  updateTaskStatus: (id) => `/api/v1/tasks/${id}/status`,
+
+  resources: '/api/v1/resources',
+
   missing: '/api/v1/missing',
   markFound: (id) => `/api/v1/missing/${id}/found`,
+
   serverStats: '/api/v1/server/stats',
   search: (query) => `/api/v1/search?q=${encodeURIComponent(query)}`,
 };

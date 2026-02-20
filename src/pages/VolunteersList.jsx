@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useVolunteersList, useVerifyVolunteer } from '../api/hooks';
+import { useUsersList } from '../api/hooks';
 import styles from './DataList.module.css';
 
 const filters = ['All', 'Verified', 'Unverified', 'Available'];
@@ -11,14 +11,13 @@ function renderStars(rating) {
 }
 
 export function VolunteersList() {
-  const { data: list, isLoading, error } = useVolunteersList();
-  const verifyVolunteer = useVerifyVolunteer();
+  const { data: list, isLoading, error } = useUsersList();
   const [activeFilter, setActiveFilter] = useState('All');
 
   if (isLoading) return <div className={styles.loading}>Loading volunteers…</div>;
   if (error) return <div className={styles.error}>⚠️ Error: {error.message}</div>;
 
-  const allRows = Array.isArray(list) ? list : [];
+  const allRows = Array.isArray(list) ? list.filter(u => u.role === 'volunteer') : [];
 
   let rows = allRows;
   if (activeFilter === 'Verified') rows = allRows.filter(r => r.is_verified);
@@ -115,14 +114,13 @@ export function VolunteersList() {
                   <td>
                     <button
                       className={`${styles.actionSmall} ${row.is_verified ? styles.actionDanger : styles.actionSuccess}`}
-                      onClick={() => verifyVolunteer.mutate({ id: row.id, isVerified: !row.is_verified })}
-                      disabled={verifyVolunteer.isPending}
-                      title={row.is_verified ? 'Revoke verification' : 'Verify volunteer'}
+                      disabled={true}
+                      title={'Action disabled in this view'}
                     >
                       <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                        {row.is_verified ? 'remove_moderator' : 'verified_user'}
+                        {row.is_verified ? 'verified_user' : 'verified_user'}
                       </span>
-                      <span style={{ fontSize: 11 }}>{row.is_verified ? 'Revoke' : 'Verify'}</span>
+                      <span style={{ fontSize: 11 }}>{row.is_verified ? 'Verified' : 'Verify'}</span>
                     </button>
                   </td>
                 </tr>
