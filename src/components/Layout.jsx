@@ -1,8 +1,10 @@
+import { useState, useRef, useEffect } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { UserButton, useUser } from '@clerk/clerk-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleSidebar, toggleTheme, selectTheme } from '../store/slices/uiSlice';
 import { useMe } from '../api/hooks';
+import { SearchResultsPopup } from './SearchResultsPopup';
 import styles from './Layout.module.css';
 
 const navItems = [
@@ -23,6 +25,21 @@ export function Layout() {
   const { data: me } = useMe();
   const { user: clerkUser } = useUser();
   const role = me?.role ?? '—';
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchContainerRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        setIsSearchOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [searchContainerRef]);
 
   const displayName = clerkUser
     ? [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || clerkUser.primaryEmailAddress?.emailAddress || 'Admin User'
@@ -111,12 +128,23 @@ export function Layout() {
             >
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>menu</span>
             </button>
-            <div className={styles.searchBox}>
+            <div className={styles.searchBox} ref={searchContainerRef} style={{ position: 'relative' }}>
               <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#94a3b8' }}>search</span>
               <input
                 type="text"
                 placeholder="Search incidents, units..."
                 className={styles.searchInput}
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setIsSearchOpen(true);
+                }}
+                onFocus={() => setIsSearchOpen(true)}
+              />
+              <SearchResultsPopup 
+                query={searchQuery} 
+                isVisible={isSearchOpen} 
+                onClose={() => setIsSearchOpen(false)} 
               />
             </div>
           </div>

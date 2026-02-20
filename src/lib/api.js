@@ -55,6 +55,7 @@ export const apiPaths = {
   sos: '/api/v1/sos',
   sosById: (id) => `/api/v1/sos/${id}`,
   sosStatus: (id) => `/api/v1/sos/${id}/status`,
+  sosTasks: (id) => `/api/v1/sos/${id}/tasks`,
   disasters: '/api/v1/disasters',
   disasterById: (id) => `/api/v1/disasters/${id}`,
   disasterActivate: (id) => `/api/v1/disasters/${id}/activate`,
@@ -70,4 +71,5 @@ export const apiPaths = {
   missing: '/api/v1/missing',
   markFound: (id) => `/api/v1/missing/${id}/found`,
   serverStats: '/api/v1/server/stats',
+  search: (query) => `/api/v1/search?q=${encodeURIComponent(query)}`,
 };

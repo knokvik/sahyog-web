@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { useSosList, useUpdateSosStatus, useVolunteersList, useCreateTask } from '../api/hooks';
+import { useSosList, useVolunteersList, useCreateTask, useSosTasks } from '../api/hooks';
 import styles from './DataList.module.css';
 
-const statusOptions = ['pending', 'in_progress', 'resolved', 'cancelled'];
 const filters = ['All', 'pending', 'in_progress', 'resolved', 'cancelled'];
 
 function StatusBadge({ status }) {
@@ -14,20 +13,40 @@ function formatTime(dateStr) {
   return new Date(dateStr).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
-function AssignModal({ sosId, onClose }) {
+function VolunteerActionsModal({ sosId, onClose }) {
   const { data: volunteers } = useVolunteersList();
+  const { data: assignedTasks, isLoading: tasksLoading } = useSosTasks(sosId);
   const createTask = useCreateTask();
-  const [volunteerId, setVolunteerId] = useState('');
+  
+  const [selectedVolunteerId, setSelectedVolunteerId] = useState(null);
   const [instructions, setInstructions] = useState('');
 
-  const verifiedVols = (Array.isArray(volunteers) ? volunteers : []).filter(v => v.is_verified);
+  const allVols = Array.isArray(volunteers) ? volunteers : [];
+  const validTasks = Array.isArray(assignedTasks) ? assignedTasks : [];
 
-  const handleSubmit = (e) => {
+  // Filter out volunteers who are already assigned to this SOS
+  const assignedVolIds = new Set(validTasks.map(t => t.volunteer_id));
+  const freeVols = allVols.filter(v => v.is_verified && !assignedVolIds.has(v.id));
+
+  const handleAssignClick = (volId) => {
+    if (selectedVolunteerId === volId) {
+      setSelectedVolunteerId(null);
+      setInstructions('');
+    } else {
+      setSelectedVolunteerId(volId);
+      setInstructions('');
+    }
+  };
+
+  const handleSubmitAssign = (e, volunteerId) => {
     e.preventDefault();
-    if (!volunteerId) return;
     createTask.mutate(
       { sosId, volunteerId, instructions: instructions || undefined },
-      { onSuccess: () => onClose() }
+      { onSuccess: () => {
+          setSelectedVolunteerId(null);
+          setInstructions('');
+        } 
+      }
     );
   };
 
@@ -35,34 +54,99 @@ function AssignModal({ sosId, onClose }) {
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <h3>Assign Volunteer</h3>
+          <h3>Actions & Assignments</h3>
           <button className={styles.modalClose} onClick={onClose}>
             <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
           </button>
         </div>
-        <form onSubmit={handleSubmit} className={styles.modalBody}>
-          <label className={styles.formLabel}>Volunteer</label>
-          <select value={volunteerId} onChange={e => setVolunteerId(e.target.value)} className={styles.select} required style={{ width: '100%', marginBottom: 12 }}>
-            <option value="">Select a volunteer…</option>
-            {verifiedVols.map(v => (
-              <option key={v.id} value={v.id}>{v.full_name || v.email || v.id.slice(0, 8)}</option>
-            ))}
-          </select>
-          <label className={styles.formLabel}>Instructions (optional)</label>
-          <textarea
-            value={instructions}
-            onChange={e => setInstructions(e.target.value)}
-            className={styles.formTextarea}
-            rows={3}
-            placeholder="Describe the task…"
-          />
-          <div className={styles.modalActions}>
-            <button type="button" className={styles.cancelBtn} onClick={onClose}>Cancel</button>
-            <button type="submit" className={styles.submitBtn} disabled={createTask.isPending || !volunteerId}>
-              {createTask.isPending ? 'Assigning…' : 'Assign Task'}
-            </button>
+        
+        <div className={styles.modalSplitBody}>
+          {/* Assigned Volunteers Section */}
+          <div className={styles.modalSection}>
+            <h4 className={styles.modalSectionTitle}>Assigned Volunteers</h4>
+            {tasksLoading ? (
+              <div style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>Loading...</div>
+            ) : validTasks.length === 0 ? (
+              <div style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>No volunteers assigned yet.</div>
+            ) : (
+              <div className={styles.volunteerList}>
+                {validTasks.map(task => (
+                  <div key={task.id} className={styles.volunteerItem}>
+                    <div className={styles.volunteerHeader}>
+                      <div className={styles.volunteerInfo}>
+                        <span className={styles.volunteerName}>{task.volunteer_name || 'Unknown'}</span>
+                        <span className={styles.volunteerTaskDesc}>
+                          {task.instructions ? `Task: ${task.instructions}` : 'No specific description provided'}
+                        </span>
+                      </div>
+                      <StatusBadge status={task.status} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </form>
+
+          {/* Free / Unassigned Volunteers Section */}
+          <div className={styles.modalSection}>
+            <h4 className={styles.modalSectionTitle}>Free Volunteers</h4>
+            {freeVols.length === 0 ? (
+              <div style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>No free verified volunteers available.</div>
+            ) : (
+              <div className={styles.volunteerList}>
+                {freeVols.map(v => {
+                  const isSelected = selectedVolunteerId === v.id;
+                  return (
+                    <div key={v.id} className={styles.volunteerItem}>
+                      <div className={styles.volunteerHeader}>
+                        <div className={styles.volunteerInfo}>
+                          <span className={styles.volunteerName}>{v.full_name || v.email || v.id.slice(0, 8)}</span>
+                          <span className={styles.volunteerTaskDesc}>Skills: {v.skills?.join(', ') || 'None listed'}</span>
+                        </div>
+                        <button 
+                          type="button" 
+                          className={styles.actionSmall}
+                          onClick={() => handleAssignClick(v.id)}
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                            {isSelected ? 'close' : 'person_add'}
+                          </span>
+                          <span style={{ fontSize: 11 }}>{isSelected ? 'Cancel' : 'Assign'}</span>
+                        </button>
+                      </div>
+
+                      {/* Animated Slide-Down Assignment Form */}
+                      <form 
+                        className={`${styles.assignForm} ${isSelected ? styles.open : ''}`} 
+                        onSubmit={(e) => handleSubmitAssign(e, v.id)}
+                      >
+                        <label className={styles.formLabel}>Task Description</label>
+                        <textarea
+                          value={isSelected ? instructions : ''}
+                          onChange={e => setInstructions(e.target.value)}
+                          className={styles.formTextarea}
+                          rows={2}
+                          placeholder="Describe the task to be completed..."
+                          required
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+                          <button 
+                            type="submit" 
+                            className={styles.submitBtn} 
+                            disabled={createTask.isPending}
+                            style={{ padding: '6px 14px', fontSize: 12 }}
+                          >
+                            {createTask.isPending ? 'Assigning…' : 'Confirm Assignment'}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -70,7 +154,6 @@ function AssignModal({ sosId, onClose }) {
 
 export function SosList() {
   const { data: list, isLoading, error } = useSosList();
-  const updateStatus = useUpdateSosStatus();
   const [activeFilter, setActiveFilter] = useState('All');
   const [assigningSos, setAssigningSos] = useState(null);
 
@@ -83,7 +166,7 @@ export function SosList() {
 
   return (
     <div className={styles.page}>
-      {assigningSos && <AssignModal sosId={assigningSos} onClose={() => setAssigningSos(null)} />}
+      {assigningSos && <VolunteerActionsModal sosId={assigningSos} onClose={() => setAssigningSos(null)} />}
 
       <div className={styles.pageHeader}>
         <div className={styles.pageHeaderLeft}>
@@ -116,14 +199,13 @@ export function SosList() {
               <th>Type</th>
               <th>Priority</th>
               <th>Created</th>
-              <th>Status</th>
-              <th>Assign</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={7}>
+                <td colSpan={6}>
                   <div className={styles.emptyState}>
                     <span className="material-symbols-outlined" style={{ fontSize: 36, opacity: 0.3 }}>inbox</span>
                     <p className={styles.emptyText}>No SOS alerts found</p>
@@ -139,28 +221,14 @@ export function SosList() {
                   <td style={{ fontWeight: 700 }}>{row.priority_score ?? '—'}</td>
                   <td className={styles.timeCell}>{formatTime(row.created_at)}</td>
                   <td>
-                    <select
-                      value={row.status}
-                      onChange={(e) => updateStatus.mutate({ id: row.id, status: e.target.value })}
-                      disabled={updateStatus.isPending}
-                      className={styles.select}
+                    <button
+                      className={styles.actionSmall}
+                      onClick={() => setAssigningSos(row.id)}
+                      title="Manage Actions & Assignments"
                     >
-                      {statusOptions.map(s => (
-                        <option key={s} value={s}>{s.replace('_', ' ')}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td>
-                    {(row.status === 'pending' || row.status === 'in_progress') && (
-                      <button
-                        className={styles.actionSmall}
-                        onClick={() => setAssigningSos(row.id)}
-                        title="Assign volunteer"
-                      >
-                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>person_add</span>
-                        <span style={{ fontSize: 11 }}>Assign</span>
-                      </button>
-                    )}
+                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>manage_accounts</span>
+                      <span style={{ fontSize: 11 }}>Actions</span>
+                    </button>
                   </td>
                 </tr>
               ))
