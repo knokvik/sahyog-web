@@ -107,3 +107,122 @@ export function useServerStats() {
     retry: 1,
   });
 }
+
+export function useUsersList() {
+  const { getToken, isSignedIn } = useAuth();
+  return useQuery({
+    queryKey: ['users', 'list'],
+    queryFn: () => apiRequest(apiPaths.users, {}, getToken),
+    enabled: isSignedIn === true,
+  });
+}
+
+export function useUpdateUserRole() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ uid, role }) =>
+      apiRequest(apiPaths.userRole(uid), { method: 'PUT', body: JSON.stringify({ role }) }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+  });
+}
+
+export function useCreateDisaster() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data) =>
+      apiRequest(apiPaths.disasters, { method: 'POST', body: JSON.stringify(data) }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['disasters'] });
+    },
+  });
+}
+
+export function useActivateDisaster() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) =>
+      apiRequest(apiPaths.disasterActivate(id), { method: 'POST' }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['disasters'] });
+    },
+  });
+}
+
+export function useResolveDisaster() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) =>
+      apiRequest(apiPaths.disasterResolve(id), { method: 'POST' }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['disasters'] });
+    },
+  });
+}
+
+export function useVerifyVolunteer() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, isVerified }) =>
+      apiRequest(apiPaths.volunteerVerify(id), { method: 'PATCH', body: JSON.stringify({ isVerified }) }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['volunteers'] });
+    },
+  });
+}
+
+export function useCreateShelter() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data) =>
+      apiRequest(apiPaths.createShelter, { method: 'POST', body: JSON.stringify(data) }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['shelters'] });
+    },
+  });
+}
+
+export function useUpdateShelter() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }) =>
+      apiRequest(apiPaths.updateShelter(id), { method: 'PATCH', body: JSON.stringify(data) }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['shelters'] });
+    },
+  });
+}
+
+export function useMarkFound() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) =>
+      apiRequest(apiPaths.markFound(id), { method: 'PATCH' }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['missing'] });
+    },
+  });
+}
+
+export function useCreateTask() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data) =>
+      apiRequest(apiPaths.createTask, { method: 'POST', body: JSON.stringify(data) }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sos'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+  });
+}
+

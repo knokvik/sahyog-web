@@ -12,6 +12,8 @@ const navItems = [
   { to: '/volunteers', label: 'Volunteers', icon: 'group' },
   { to: '/shelters', label: 'Shelters', icon: 'night_shelter' },
   { to: '/missing', label: 'Missing Persons', icon: 'person_search' },
+  { to: '/users', label: 'User Management', icon: 'admin_panel_settings' },
+  { to: '/server', label: 'Server Monitor', icon: 'monitor_heart' },
 ];
 
 export function Layout() {
@@ -40,7 +42,7 @@ export function Layout() {
         {/* Brand */}
         <div className={styles.brand}>
           <div className={styles.brandIcon}>
-            <span className="material-symbols-outlined" style={{ fontSize: 28, color: '#34b27b', fontWeight: 700 }}>emergency</span>
+            <img src="../assets/favicon.svg" style={{ width: '1.5rem', height: '1.5rem' }} />
           </div>
           {sidebarOpen && (
             <h2 className={styles.brandName}>ResQConnect</h2>

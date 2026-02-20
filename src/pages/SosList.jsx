@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSosList, useUpdateSosStatus } from '../api/hooks';
+import { useSosList, useUpdateSosStatus, useVolunteersList, useCreateTask } from '../api/hooks';
 import styles from './DataList.module.css';
 
 const statusOptions = ['pending', 'in_progress', 'resolved', 'cancelled'];
@@ -14,10 +14,65 @@ function formatTime(dateStr) {
   return new Date(dateStr).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
+function AssignModal({ sosId, onClose }) {
+  const { data: volunteers } = useVolunteersList();
+  const createTask = useCreateTask();
+  const [volunteerId, setVolunteerId] = useState('');
+  const [instructions, setInstructions] = useState('');
+
+  const verifiedVols = (Array.isArray(volunteers) ? volunteers : []).filter(v => v.is_verified);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!volunteerId) return;
+    createTask.mutate(
+      { sosId, volunteerId, instructions: instructions || undefined },
+      { onSuccess: () => onClose() }
+    );
+  };
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modal} onClick={e => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <h3>Assign Volunteer</h3>
+          <button className={styles.modalClose} onClick={onClose}>
+            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className={styles.modalBody}>
+          <label className={styles.formLabel}>Volunteer</label>
+          <select value={volunteerId} onChange={e => setVolunteerId(e.target.value)} className={styles.select} required style={{ width: '100%', marginBottom: 12 }}>
+            <option value="">Select a volunteer…</option>
+            {verifiedVols.map(v => (
+              <option key={v.id} value={v.id}>{v.full_name || v.email || v.id.slice(0, 8)}</option>
+            ))}
+          </select>
+          <label className={styles.formLabel}>Instructions (optional)</label>
+          <textarea
+            value={instructions}
+            onChange={e => setInstructions(e.target.value)}
+            className={styles.formTextarea}
+            rows={3}
+            placeholder="Describe the task…"
+          />
+          <div className={styles.modalActions}>
+            <button type="button" className={styles.cancelBtn} onClick={onClose}>Cancel</button>
+            <button type="submit" className={styles.submitBtn} disabled={createTask.isPending || !volunteerId}>
+              {createTask.isPending ? 'Assigning…' : 'Assign Task'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export function SosList() {
   const { data: list, isLoading, error } = useSosList();
   const updateStatus = useUpdateSosStatus();
   const [activeFilter, setActiveFilter] = useState('All');
+  const [assigningSos, setAssigningSos] = useState(null);
 
   if (isLoading) return <div className={styles.loading}>Loading SOS alerts…</div>;
   if (error) return <div className={styles.error}>⚠️ Error: {error.message}</div>;
@@ -28,6 +83,8 @@ export function SosList() {
 
   return (
     <div className={styles.page}>
+      {assigningSos && <AssignModal sosId={assigningSos} onClose={() => setAssigningSos(null)} />}
+
       <div className={styles.pageHeader}>
         <div className={styles.pageHeaderLeft}>
           <h1 className={styles.title}>
@@ -59,13 +116,14 @@ export function SosList() {
               <th>Type</th>
               <th>Priority</th>
               <th>Created</th>
-              <th>Actions</th>
+              <th>Status</th>
+              <th>Assign</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6}>
+                <td colSpan={7}>
                   <div className={styles.emptyState}>
                     <span className="material-symbols-outlined" style={{ fontSize: 36, opacity: 0.3 }}>inbox</span>
                     <p className={styles.emptyText}>No SOS alerts found</p>
@@ -91,6 +149,18 @@ export function SosList() {
                         <option key={s} value={s}>{s.replace('_', ' ')}</option>
                       ))}
                     </select>
+                  </td>
+                  <td>
+                    {(row.status === 'pending' || row.status === 'in_progress') && (
+                      <button
+                        className={styles.actionSmall}
+                        onClick={() => setAssigningSos(row.id)}
+                        title="Assign volunteer"
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>person_add</span>
+                        <span style={{ fontSize: 11 }}>Assign</span>
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))

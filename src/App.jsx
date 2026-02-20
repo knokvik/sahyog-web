@@ -11,6 +11,8 @@ import { DisastersList } from './pages/DisastersList';
 import { VolunteersList } from './pages/VolunteersList';
 import { SheltersList } from './pages/SheltersList';
 import { MissingList } from './pages/MissingList';
+import { UsersList } from './pages/UsersList';
+import { ServerMonitor } from './pages/ServerMonitor';
 
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 if (!publishableKey) {
@@ -90,6 +92,8 @@ function AppRoutes() {
         <Route path="volunteers" element={<VolunteersList />} />
         <Route path="shelters" element={<SheltersList />} />
         <Route path="missing" element={<MissingList />} />
+        <Route path="users" element={<UsersList />} />
+        <Route path="server" element={<ServerMonitor />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

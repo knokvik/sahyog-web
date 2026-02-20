@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useMissingList } from '../api/hooks';
+import { useMissingList, useMarkFound } from '../api/hooks';
 import styles from './DataList.module.css';
 
 const filters = ['All', 'missing', 'found'];
@@ -16,6 +16,7 @@ function formatTime(dateStr) {
 
 export function MissingList() {
   const { data: list, isLoading, error } = useMissingList();
+  const markFound = useMarkFound();
   const [activeFilter, setActiveFilter] = useState('All');
 
   if (isLoading) return <div className={styles.loading}>Loading missing persons…</div>;
@@ -57,12 +58,13 @@ export function MissingList() {
               <th>Age</th>
               <th>Status</th>
               <th>Reported</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={4}>
+                <td colSpan={5}>
                   <div className={styles.emptyState}>
                     <span className="material-symbols-outlined" style={{ fontSize: 36, opacity: 0.3 }}>person_off</span>
                     <p className={styles.emptyText}>No missing person reports found</p>
@@ -83,6 +85,19 @@ export function MissingList() {
                   <td>{row.age ?? '—'}</td>
                   <td><StatusBadge status={row.status} /></td>
                   <td className={styles.timeCell}>{formatTime(row.created_at)}</td>
+                  <td>
+                    {row.status === 'missing' && (
+                      <button
+                        className={`${styles.actionSmall} ${styles.actionSuccess}`}
+                        onClick={() => markFound.mutate(row.id)}
+                        disabled={markFound.isPending}
+                        title="Mark as found"
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>check_circle</span>
+                        <span style={{ fontSize: 11 }}>Mark Found</span>
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))
             )}

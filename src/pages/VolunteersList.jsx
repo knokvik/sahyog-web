@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useVolunteersList } from '../api/hooks';
+import { useVolunteersList, useVerifyVolunteer } from '../api/hooks';
 import styles from './DataList.module.css';
 
 const filters = ['All', 'Verified', 'Unverified', 'Available'];
@@ -12,6 +12,7 @@ function renderStars(rating) {
 
 export function VolunteersList() {
   const { data: list, isLoading, error } = useVolunteersList();
+  const verifyVolunteer = useVerifyVolunteer();
   const [activeFilter, setActiveFilter] = useState('All');
 
   if (isLoading) return <div className={styles.loading}>Loading volunteers…</div>;
@@ -55,17 +56,19 @@ export function VolunteersList() {
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>Status</th>
+              <th>Name</th>
+              <th>Email</th>
               <th>Verified</th>
               <th>Available</th>
               <th>Rating</th>
               <th>Tasks</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={5}>
+                <td colSpan={7}>
                   <div className={styles.emptyState}>
                     <span className="material-symbols-outlined" style={{ fontSize: 36, opacity: 0.3 }}>group_off</span>
                     <p className={styles.emptyText}>No volunteers found</p>
@@ -75,10 +78,11 @@ export function VolunteersList() {
             ) : (
               rows.map(row => (
                 <tr key={row.id}>
-                  <td>
-                    <span className={`${styles.badge} ${row.is_verified ? styles.badge_success : styles.badge_pending}`}>
-                      {row.is_verified ? 'Active' : 'Pending'}
-                    </span>
+                  <td style={{ fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                    {row.full_name || '—'}
+                  </td>
+                  <td style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+                    {row.email || '—'}
                   </td>
                   <td>
                     {row.is_verified ? (
@@ -108,6 +112,19 @@ export function VolunteersList() {
                   </td>
                   <td>{renderStars(row.rating)}</td>
                   <td style={{ fontWeight: 700 }}>{row.total_tasks ?? 0}</td>
+                  <td>
+                    <button
+                      className={`${styles.actionSmall} ${row.is_verified ? styles.actionDanger : styles.actionSuccess}`}
+                      onClick={() => verifyVolunteer.mutate({ id: row.id, isVerified: !row.is_verified })}
+                      disabled={verifyVolunteer.isPending}
+                      title={row.is_verified ? 'Revoke verification' : 'Verify volunteer'}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                        {row.is_verified ? 'remove_moderator' : 'verified_user'}
+                      </span>
+                      <span style={{ fontSize: 11 }}>{row.is_verified ? 'Revoke' : 'Verify'}</span>
+                    </button>
+                  </td>
                 </tr>
               ))
             )}
