@@ -24,7 +24,11 @@ export async function apiRequest(path, options = {}, getToken) {
   const res = await fetch(url, { ...options, headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const err = new Error(data.message || res.statusText || 'Request failed');
+    let msg = data.message || res.statusText || 'Request failed';
+    if (data.errors && Array.isArray(data.errors)) {
+      msg += ' - ' + data.errors.map(e => e.message).join(', ');
+    }
+    const err = new Error(msg);
     err.status = res.status;
     err.details = data.details ?? data;
     err.detail = data.detail ?? data.details?.detail;
@@ -60,6 +64,7 @@ export const apiPaths = {
   disasterById: (id) => `/api/v1/disasters/${id}`,
   disasterActivate: (id) => `/api/v1/disasters/${id}/activate`,
   disasterResolve: (id) => `/api/v1/disasters/${id}/resolve`,
+  disasterTasks: (id) => `/api/v1/disasters/${id}/tasks`,
   disasterStats: (id) => `/api/v1/disasters/${id}/stats`,
   volunteers: '/api/v1/volunteers',
   volunteerVerify: (id) => `/api/v1/volunteers/${id}/verify`,

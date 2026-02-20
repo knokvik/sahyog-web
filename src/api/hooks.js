@@ -66,6 +66,15 @@ export function useDisastersList() {
   });
 }
 
+export function useDisasterTasks(disasterId) {
+  const { getToken, isSignedIn } = useAuth();
+  return useQuery({
+    queryKey: ['disasters', disasterId, 'tasks'],
+    queryFn: () => apiRequest(apiPaths.disasterTasks(disasterId), {}, getToken),
+    enabled: isSignedIn === true && !!disasterId,
+  });
+}
+
 export function useVolunteersList() {
   const { getToken, isSignedIn } = useAuth();
   return useQuery({
