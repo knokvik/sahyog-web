@@ -114,3 +114,46 @@ export function useCreateOrgResource() {
         },
     });
 }
+
+export function useOrgRequests() {
+    const { getToken } = useAuth();
+    return useQuery({
+        queryKey: ['org-requests'],
+        queryFn: () => apiRequest(apiPaths.orgRequests, {}, getToken),
+    });
+}
+
+export function useAcceptOrgRequest() {
+    const { getToken } = useAuth();
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ assignmentId, contributions }) =>
+            apiRequest(apiPaths.orgAcceptRequest(assignmentId), {
+                method: 'POST', body: JSON.stringify({ contributions }),
+            }, getToken),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['org-requests'] }),
+    });
+}
+
+export function useRejectOrgRequest() {
+    const { getToken } = useAuth();
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (assignmentId) =>
+            apiRequest(apiPaths.orgRejectRequest(assignmentId), { method: 'POST' }, getToken),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['org-requests'] }),
+    });
+}
+
+export function useAssignCoordinator() {
+    const { getToken } = useAuth();
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ assignmentId, coordinator_id }) =>
+            apiRequest(apiPaths.orgAssignCoordinator(assignmentId), {
+                method: 'POST', body: JSON.stringify({ coordinator_id }),
+            }, getToken),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['org-requests'] }),
+    });
+}
+

@@ -164,6 +164,29 @@ export function useMarkFound() {
   });
 }
 
+// ─── Volunteer Assignments ──────────────────────────────────────────
+
+export function useMyAssignments() {
+  const { getToken, isSignedIn } = useAuth();
+  return useQuery({
+    queryKey: ['my-assignments'],
+    queryFn: () => apiRequest(apiPaths.myAssignments, {}, getToken),
+    enabled: isSignedIn === true,
+  });
+}
+
+export function useRespondAssignment() {
+  const { getToken } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }) =>
+      apiRequest(apiPaths.respondAssignment(id), {
+        method: 'POST', body: JSON.stringify({ status }),
+      }, getToken),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['my-assignments'] }),
+  });
+}
+
 export function useServerStats() {
   const { getToken, isSignedIn } = useAuth();
   return useQuery({

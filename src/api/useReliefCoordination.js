@@ -1,0 +1,71 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@clerk/clerk-react';
+import { apiRequest } from '../lib/api';
+
+const API = import.meta.env.VITE_API_URL || '';
+
+// ─── Relief Zones ────────────────────────────────────────────────────
+
+export function useReliefZones(disasterId) {
+    const { getToken, isSignedIn } = useAuth();
+    return useQuery({
+        queryKey: ['relief-zones', disasterId],
+        queryFn: () => apiRequest(`/api/v1/disasters/${disasterId}/relief-zones`, {}, getToken),
+        enabled: isSignedIn === true && !!disasterId,
+    });
+}
+
+export function useCreateZone(disasterId) {
+    const { getToken } = useAuth();
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (data) => apiRequest(`/api/v1/disasters/${disasterId}/relief-zones`, {
+            method: 'POST', body: JSON.stringify(data),
+        }, getToken),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['relief-zones', disasterId] }),
+    });
+}
+
+export function useDeleteZone(disasterId) {
+    const { getToken } = useAuth();
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (zoneId) => apiRequest(`/api/v1/disasters/${disasterId}/relief-zones/${zoneId}`, {
+            method: 'DELETE',
+        }, getToken),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['relief-zones', disasterId] }),
+    });
+}
+
+// ─── Resource Requests ───────────────────────────────────────────────
+
+export function useDisasterRequests(disasterId) {
+    const { getToken, isSignedIn } = useAuth();
+    return useQuery({
+        queryKey: ['disaster-requests', disasterId],
+        queryFn: () => apiRequest(`/api/v1/disasters/${disasterId}/requests`, {}, getToken),
+        enabled: isSignedIn === true && !!disasterId,
+    });
+}
+
+export function useCreateRequest(disasterId) {
+    const { getToken } = useAuth();
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (data) => apiRequest(`/api/v1/disasters/${disasterId}/requests`, {
+            method: 'POST', body: JSON.stringify(data),
+        }, getToken),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['disaster-requests', disasterId] }),
+    });
+}
+
+// ─── Org list (for admin to select recipients) ───────────────────────
+
+export function useAllOrganizations() {
+    const { getToken, isSignedIn } = useAuth();
+    return useQuery({
+        queryKey: ['all-organizations'],
+        queryFn: () => apiRequest('/api/v1/organizations/list', {}, getToken),
+        enabled: isSignedIn === true,
+    });
+}

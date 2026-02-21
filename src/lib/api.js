@@ -90,7 +90,15 @@ export const apiPaths = {
   orgResources: '/api/v1/organizations/me/resources',
   orgTasks: '/api/v1/organizations/me/tasks',
   orgZones: '/api/v1/organizations/me/zones',
+  orgRequests: '/api/v1/organizations/me/requests',
+  orgAcceptRequest: (assignmentId) => `/api/v1/organizations/me/requests/${assignmentId}/accept`,
+  orgRejectRequest: (assignmentId) => `/api/v1/organizations/me/requests/${assignmentId}/reject`,
+  orgAssignCoordinator: (assignmentId) => `/api/v1/organizations/me/requests/${assignmentId}/assign-coordinator`,
 
   // SOS alerts
   sos: '/api/v1/sos',
+
+  // Volunteer assignments
+  myAssignments: '/api/v1/volunteer-assignments/mine',
+  respondAssignment: (id) => `/api/v1/volunteer-assignments/${id}/respond`,
 };

@@ -1,5 +1,5 @@
 import { useSelector } from 'react-redux';
-import { useMe, useBackendHealth, useNeedsList, useDisastersList, useUsersList, useResourcesList, useServerStats } from '../api/hooks';
+import { useMe, useBackendHealth, useNeedsList, useDisastersList, useUsersList, useResourcesList, useServerStats, useMyAssignments, useRespondAssignment } from '../api/hooks';
 import { selectProfile } from '../store/slices/authSlice';
 import styles from './Dashboard.module.css';
 
@@ -179,6 +179,8 @@ export function Dashboard() {
   const { data: disastersList } = useDisastersList();
   const { data: usersList } = useUsersList();
   const { data: resourcesList } = useResourcesList();
+  const { data: assignments } = useMyAssignments();
+  const respondAssignment = useRespondAssignment();
   const profile = useSelector(selectProfile);
 
   const needsArr = Array.isArray(needsList) ? needsList : [];
@@ -237,6 +239,47 @@ export function Dashboard() {
 
       {/* Main Grid */}
       <div className={styles.contentGrid}>
+
+        {/* Volunteer Assignments (Visible only if there are assignments or if user is a volunteer with assignments) */}
+        {assignments && assignments.length > 0 && (
+          <div className={styles.card} style={{ gridColumn: '1 / -1', background: 'var(--color-primary-10)', borderColor: 'var(--color-primary)' }}>
+            <div className={styles.cardHeader}>
+              <h3 className={styles.sectionTitle} style={{ color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>assignment_ind</span>
+                My Disaster Assignments
+              </h3>
+            </div>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', padding: '0 20px 20px' }}>
+              {assignments.map(a => (
+                <div key={a.id} style={{ background: '#fff', padding: 16, borderRadius: 12, border: '1px solid var(--color-border)', flex: '1 1 300px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <h4 style={{ margin: 0, fontSize: 15, color: 'var(--color-text-primary)' }}>{a.disaster_name}</h4>
+                    <StatusBadge status={a.status} />
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 12 }}>
+                    Assigned around {formatTime(a.created_at)}
+                    {a.coordinator_name && <><br/>Coordinator: {a.coordinator_name} ({a.coordinator_phone || 'N/A'})</>}
+                  </div>
+                  {a.status === 'pending' && (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button 
+                        onClick={() => respondAssignment.mutate({ id: a.id, status: 'accepted' })}
+                        disabled={respondAssignment.isPending}
+                        style={{ padding: '6px 14px', borderRadius: 6, border: 'none', background: '#34b27b', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}
+                      >Accept</button>
+                      <button 
+                        onClick={() => respondAssignment.mutate({ id: a.id, status: 'rejected' })}
+                        disabled={respondAssignment.isPending}
+                        style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #ef4444', background: 'transparent', color: '#ef4444', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}
+                      >Reject</button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Recent SOS Alerts */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>

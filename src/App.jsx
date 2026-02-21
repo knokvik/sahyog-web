@@ -15,6 +15,7 @@ import { SheltersList } from './pages/SheltersList';
 import { MissingList } from './pages/MissingList';
 import { UsersList } from './pages/UsersList';
 import { ServerMonitor } from './pages/ServerMonitor';
+import { ReliefCoordination } from './pages/ReliefCoordination';
 import { OrgOnboarding } from './pages/org/OrgOnboarding';
 import { OrgDashboard } from './pages/org/OrgDashboard';
 import { OrgVolunteers } from './pages/org/OrgVolunteers';
@@ -22,6 +23,7 @@ import { OrgResources } from './pages/org/OrgResources';
 import { OrgTasks } from './pages/org/OrgTasks';
 import { OrgZones } from './pages/org/OrgZones';
 import { OrgProfile } from './pages/org/OrgProfile';
+import { OrgRequests } from './pages/org/OrgRequests';
 
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 if (!publishableKey) {
@@ -104,6 +106,7 @@ function AppRoutes() {
         <Route path="shelters" element={<SheltersList />} />
         <Route path="missing" element={<MissingList />} />
         <Route path="users" element={<UsersList />} />
+        <Route path="relief" element={<ReliefCoordination />} />
         <Route path="server" element={<ServerMonitor />} />
       </Route>
 
@@ -127,6 +130,7 @@ function AppRoutes() {
         }
       >
         <Route index element={<OrgDashboard />} />
+        <Route path="requests" element={<OrgRequests />} />
         <Route path="volunteers" element={<OrgVolunteers />} />
         <Route path="resources" element={<OrgResources />} />
         <Route path="tasks" element={<OrgTasks />} />

@@ -8,6 +8,7 @@ import styles from './Layout.module.css';
 
 const navItems = [
   { to: '/org', label: 'Dashboard', icon: 'dashboard' },
+  { to: '/org/requests', label: 'Requests', icon: 'assignment_ind' },
   { to: '/org/volunteers', label: 'Volunteers', icon: 'group' },
   { to: '/org/resources', label: 'Resources', icon: 'inventory_2' },
   { to: '/org/tasks', label: 'Tasks', icon: 'task_alt' },

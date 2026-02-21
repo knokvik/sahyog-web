@@ -11,6 +11,7 @@ const navItems = [
   { to: '/', label: 'Dashboard', icon: 'dashboard' },
   { to: '/needs', label: 'Needs / SOS', icon: 'sos', highlight: true },
   { to: '/disasters', label: 'Disaster Zones', icon: 'flood' },
+  { to: '/relief', label: 'Relief Coordination', icon: 'volunteer_activism' },
   { to: '/resources', label: 'Resources', icon: 'inventory_2' },
   { to: '/missing', label: 'Missing Persons', icon: 'person_search' },
   { to: '/users', label: 'User Management', icon: 'admin_panel_settings' },
