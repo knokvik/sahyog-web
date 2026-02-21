@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSosList, useUsersList, useCreateTask, useSosTasks } from '../api/hooks';
+import { useSosList, useUsersList, useCreateTask, useSosTasks, useDeleteSos } from '../api/hooks';
 import styles from './DataList.module.css';
 
 const filters = ['All', 'triggered', 'acknowledged', 'resolved'];
@@ -17,7 +17,7 @@ function VolunteerActionsModal({ sosId, onClose }) {
   const { data: volunteers } = useUsersList();
   const { data: assignedTasks, isLoading: tasksLoading } = useSosTasks(sosId);
   const createTask = useCreateTask();
-  
+
   const [selectedVolunteerId, setSelectedVolunteerId] = useState(null);
   const [instructions, setInstructions] = useState('');
 
@@ -41,10 +41,11 @@ function VolunteerActionsModal({ sosId, onClose }) {
     e.preventDefault();
     createTask.mutate(
       { sosId, volunteer_id: volunteerId, type: 'sos_response', title: 'Respond to SOS Alert', description: instructions || undefined },
-      { onSuccess: () => {
+      {
+        onSuccess: () => {
           setSelectedVolunteerId(null);
           setInstructions('');
-        } 
+        }
       }
     );
   };
@@ -58,7 +59,7 @@ function VolunteerActionsModal({ sosId, onClose }) {
             <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
           </button>
         </div>
-        
+
         <div className={styles.modalSplitBody}>
           {/* Assigned Volunteers Section */}
           <div className={styles.modalSection}>
@@ -102,8 +103,8 @@ function VolunteerActionsModal({ sosId, onClose }) {
                           <span className={styles.volunteerName}>{v.full_name || v.email || v.id.slice(0, 8)}</span>
                           <span className={styles.volunteerTaskDesc}>Skills: {v.skills?.join(', ') || 'None listed'}</span>
                         </div>
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           className={styles.actionSmall}
                           onClick={() => handleAssignClick(v.id)}
                         >
@@ -115,8 +116,8 @@ function VolunteerActionsModal({ sosId, onClose }) {
                       </div>
 
                       {/* Animated Slide-Down Assignment Form */}
-                      <form 
-                        className={`${styles.assignForm} ${isSelected ? styles.open : ''}`} 
+                      <form
+                        className={`${styles.assignForm} ${isSelected ? styles.open : ''}`}
                         onSubmit={(e) => handleSubmitAssign(e, v.id)}
                       >
                         <label className={styles.formLabel}>Task Description</label>
@@ -129,9 +130,9 @@ function VolunteerActionsModal({ sosId, onClose }) {
                           required
                         />
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
-                          <button 
-                            type="submit" 
-                            className={styles.submitBtn} 
+                          <button
+                            type="submit"
+                            className={styles.submitBtn}
                             disabled={createTask.isPending}
                             style={{ padding: '6px 14px', fontSize: 12 }}
                           >
@@ -153,8 +154,15 @@ function VolunteerActionsModal({ sosId, onClose }) {
 
 export function SosList() {
   const { data: list, isLoading, error } = useSosList();
+  const deleteSos = useDeleteSos();
   const [activeFilter, setActiveFilter] = useState('All');
   const [assigningSos, setAssigningSos] = useState(null);
+
+  const handleDelete = (id) => {
+    if (window.confirm('Are you sure you want to delete this SOS alert?')) {
+      deleteSos.mutate(id);
+    }
+  };
 
   if (isLoading) return <div className={styles.loading}>Loading SOS alerts…</div>;
   if (error) return <div className={styles.error}>⚠️ Error: {error.message}</div>;
@@ -220,14 +228,26 @@ export function SosList() {
                   <td>{row.disaster_name ?? '—'}</td>
                   <td className={styles.timeCell}>{formatTime(row.created_at)}</td>
                   <td>
-                    <button
-                      className={styles.actionSmall}
-                      onClick={() => setAssigningSos(row.id)}
-                      title="Manage Actions & Assignments"
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>manage_accounts</span>
-                      <span style={{ fontSize: 11 }}>Actions</span>
-                    </button>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        className={styles.actionSmall}
+                        onClick={() => setAssigningSos(row.id)}
+                        title="Manage Actions & Assignments"
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>manage_accounts</span>
+                        <span style={{ fontSize: 11 }}>Actions</span>
+                      </button>
+                      <button
+                        className={styles.actionSmall}
+                        onClick={() => handleDelete(row.id)}
+                        style={{ color: '#ef4444' }}
+                        title="Delete SOS Alert"
+                        disabled={deleteSos.isPending}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
+                        <span style={{ fontSize: 11 }}>Delete</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

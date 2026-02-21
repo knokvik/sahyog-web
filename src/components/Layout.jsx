@@ -10,6 +10,7 @@ import styles from './Layout.module.css';
 const navItems = [
   { to: '/', label: 'Dashboard', icon: 'dashboard' },
   { to: '/needs', label: 'Needs / SOS', icon: 'sos', highlight: true },
+  { to: '/map', label: 'Live Map', icon: 'radar', highlight: true },
   { to: '/disasters', label: 'Disaster Zones', icon: 'flood' },
   { to: '/relief', label: 'Relief Coordination', icon: 'volunteer_activism' },
   { to: '/resources', label: 'Resources', icon: 'inventory_2' },
@@ -140,10 +141,10 @@ export function Layout() {
                 }}
                 onFocus={() => setIsSearchOpen(true)}
               />
-              <SearchResultsPopup 
-                query={searchQuery} 
-                isVisible={isSearchOpen} 
-                onClose={() => setIsSearchOpen(false)} 
+              <SearchResultsPopup
+                query={searchQuery}
+                isVisible={isSearchOpen}
+                onClose={() => setIsSearchOpen(false)}
               />
             </div>
           </div>

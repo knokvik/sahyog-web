@@ -7,6 +7,7 @@ import { store } from './store';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Layout } from './components/Layout';
 import { OrgLayout } from './components/OrgLayout';
+import { RealtimeProvider } from './components/RealtimeProvider';
 import { Dashboard } from './pages/Dashboard';
 import { SosList } from './pages/SosList';
 import { DisastersList } from './pages/DisastersList';
@@ -16,6 +17,7 @@ import { MissingList } from './pages/MissingList';
 import { UsersList } from './pages/UsersList';
 import { ServerMonitor } from './pages/ServerMonitor';
 import { ReliefCoordination } from './pages/ReliefCoordination';
+import { LiveMap } from './pages/LiveMap';
 import { OrgOnboarding } from './pages/org/OrgOnboarding';
 import { OrgDashboard } from './pages/org/OrgDashboard';
 import { OrgVolunteers } from './pages/org/OrgVolunteers';
@@ -107,6 +109,7 @@ function AppRoutes() {
         <Route path="missing" element={<MissingList />} />
         <Route path="users" element={<UsersList />} />
         <Route path="relief" element={<ReliefCoordination />} />
+        <Route path="map" element={<LiveMap />} />
         <Route path="server" element={<ServerMonitor />} />
       </Route>
 
@@ -480,9 +483,11 @@ export default function App() {
     >
       <Provider store={store}>
         <QueryClientProvider client={queryClient}>
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
+          <RealtimeProvider>
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </RealtimeProvider>
         </QueryClientProvider>
       </Provider>
     </ClerkProvider>
