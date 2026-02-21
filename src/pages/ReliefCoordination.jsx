@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useDisastersList } from '../api/hooks';
+import { useDisastersList, useSosList } from '../api/hooks';
 import {
   useReliefZones, useCreateZone, useDeleteZone,
   useDisasterRequests, useCreateRequest, useAllOrganizations,
 } from '../api/useReliefCoordination';
-import { MapContainer, TileLayer, Circle, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Circle, Marker, Popup, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import styles from './DataList.module.css';
 
@@ -28,6 +29,7 @@ function MapClickHandler({ onMapClick, drawing }) {
 /* ─── Zone Map Tab ─────────────────────────────────────────── */
 function ZoneMapTab({ disasterId }) {
   const { data: zones = [], isLoading } = useReliefZones(disasterId);
+  const { data: sosAlerts = [] } = useSosList();
   const createZone = useCreateZone(disasterId);
   const deleteZone = useDeleteZone(disasterId);
 
@@ -36,6 +38,13 @@ function ZoneMapTab({ disasterId }) {
   const [clickCenter, setClickCenter] = useState(null);
   const [radius, setRadius] = useState(500);
   const [zoneName, setZoneName] = useState('');
+
+  const sosIcon = L.divIcon({
+    className: 'sos-radar-blip-container',
+    html: '<div class="sos-radar-blip"></div>',
+    iconSize: [20, 20],
+    iconAnchor: [10, 10], 
+  });
 
   const handleMapClick = useCallback((latlng) => {
     setClickCenter(latlng);
@@ -113,6 +122,21 @@ function ZoneMapTab({ disasterId }) {
               />
             );
           })}
+
+          {/* SOS Radars */}
+          {sosAlerts
+            .filter(s => s.lat != null && s.lng != null && s.status !== 'resolved')
+            .map(s => (
+              <Marker key={s.id} position={[s.lat, s.lng]} icon={sosIcon}>
+                <Popup>
+                  <strong style={{ color: 'var(--color-danger)' }}>SOS Alert</strong><br/>
+                  <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>Status: {s.status}</span><br/>
+                  <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>Volunteer: {s.volunteer_name || 'Anonymous'}</span><br/>
+                  <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{new Date(s.created_at).toLocaleString()}</span>
+                </Popup>
+              </Marker>
+            ))
+          }
 
           {/* Preview zone */}
           {clickCenter && (
