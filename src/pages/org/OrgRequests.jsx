@@ -23,7 +23,7 @@ function RequestCard({ req, onAccept, onReject, onAssignCoord, acceptMutation, r
   const [coordId, setCoordId] = useState('');
   const { data: volunteers = [] } = useOrgVolunteers();
 
-  const coordinators = (Array.isArray(volunteers) ? volunteers : []).filter(v => v.role === 'coordinator');
+  const coordinators = (Array.isArray(volunteers) ? volunteers : []).filter(v => (v.role || '').toLowerCase() === 'coordinator');
 
   const updateContribution = (idx, val) => {
     const next = [...contributions];
@@ -129,8 +129,8 @@ function RequestCard({ req, onAccept, onReject, onAssignCoord, acceptMutation, r
         </div>
       )}
 
-      {/* Assign coordinator (after accepting) */}
-      {isAccepted && (
+      {/* Assign coordinator (after accepting, if not already assigned) */}
+      {isAccepted && !req.assigned_coordinator_name && (
         <div style={{ marginTop: 14, padding: 14, borderRadius: 10, background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
           <h4 style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--color-text-secondary)' }}>Assign Coordinator</h4>
           <div style={{ display: 'flex', gap: 10 }}>
@@ -140,7 +140,11 @@ function RequestCard({ req, onAccept, onReject, onAssignCoord, acceptMutation, r
                 background: 'var(--color-surface)', color: 'var(--color-text-primary)', fontSize: 13,
               }}>
               <option value="">Select coordinator...</option>
-              {coordinators.map(c => <option key={c.id} value={c.id}>{c.full_name || c.email}</option>)}
+              {coordinators.map(c => (
+                <option key={c.id} value={c.id} disabled={c.is_assigned}>
+                  {c.full_name || c.email} {c.is_assigned ? '(Busy)' : ''}
+                </option>
+              ))}
             </select>
             <button onClick={() => { if (coordId) onAssignCoord(req.assignment_id, coordId); }}
               disabled={!coordId} style={{
@@ -156,6 +160,19 @@ function RequestCard({ req, onAccept, onReject, onAssignCoord, acceptMutation, r
               No coordinators linked to your organization yet. Add coordinators via your Volunteers page.
             </p>
           )}
+        </div>
+      )}
+
+      {/* Show Assigned Coordinator Details */}
+      {isAccepted && req.assigned_coordinator_name && (
+        <div style={{ marginTop: 14, padding: 14, borderRadius: 10, background: 'var(--color-info-10)', border: '1px solid var(--color-primary)' }}>
+          <h4 style={{ margin: 0, fontSize: 13, color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>check_circle</span>
+            Coordinator Assigned
+          </h4>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 600 }}>
+            {req.assigned_coordinator_name}
+          </p>
         </div>
       )}
     </div>

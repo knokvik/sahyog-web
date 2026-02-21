@@ -153,7 +153,10 @@ export function useAssignCoordinator() {
             apiRequest(apiPaths.orgAssignCoordinator(assignmentId), {
                 method: 'POST', body: JSON.stringify({ coordinator_id }),
             }, getToken),
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['org-requests'] }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['org-requests'] });
+            qc.invalidateQueries({ queryKey: ['org-volunteers'] });
+        },
     });
 }
 
