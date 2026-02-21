@@ -129,50 +129,61 @@ function RequestCard({ req, onAccept, onReject, onAssignCoord, acceptMutation, r
         </div>
       )}
 
-      {/* Assign coordinator (after accepting, if not already assigned) */}
-      {isAccepted && !req.assigned_coordinator_name && (
+      {/* Assign Coordinator per Zone (after accepting) */}
+      {isAccepted && req.zones && req.zones.length > 0 && (
         <div style={{ marginTop: 14, padding: 14, borderRadius: 10, background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
-          <h4 style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--color-text-secondary)' }}>Assign Coordinator</h4>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <select value={coordId} onChange={e => setCoordId(e.target.value)}
-              style={{
-                flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--color-border)',
-                background: 'var(--color-surface)', color: 'var(--color-text-primary)', fontSize: 13,
-              }}>
-              <option value="">Select coordinator...</option>
-              {coordinators.map(c => (
-                <option key={c.id} value={c.id} disabled={c.is_assigned}>
-                  {c.full_name || c.email} {c.is_assigned ? '(Busy)' : ''}
-                </option>
-              ))}
-            </select>
-            <button onClick={() => { if (coordId) onAssignCoord(req.assignment_id, coordId); }}
-              disabled={!coordId} style={{
-                padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                background: coordId ? '#34b27b' : 'var(--color-border)', color: '#fff',
-                fontWeight: 600, fontSize: 12,
-              }}>
-              Assign
-            </button>
+          <h4 style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--color-text-secondary)' }}>Assign Coordinator to Zones</h4>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {req.zones.map(zone => (
+              <div key={zone.id} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: 10, borderRadius: 8, background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: zone.severity === 'red' ? '#ef4444' : zone.severity === 'yellow' ? '#f59e0b' : '#3b82f6' }} />
+                  <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--color-text-primary)' }}>{zone.name}</span>
+                </div>
+                
+                {zone.assigned_coordinator_name ? (
+                  <div style={{ padding: '6px 10px', borderRadius: 6, background: 'var(--color-info-10)', border: '1px solid var(--color-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--color-primary)' }}>check_circle</span>
+                    <span style={{ fontSize: 12, color: 'var(--color-primary)', fontWeight: 600 }}>{zone.assigned_coordinator_name}</span>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <select id={`coord-${zone.id}`} defaultValue=""
+                      style={{
+                        flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--color-border)',
+                        background: 'var(--color-bg)', color: 'var(--color-text-primary)', fontSize: 12,
+                      }}>
+                      <option value="">Select coordinator...</option>
+                      {coordinators.map(c => (
+                        <option key={c.id} value={c.id} disabled={c.is_assigned}>
+                          {c.full_name || c.email} {c.is_assigned ? '(Busy)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                    <button onClick={() => {
+                        const selectEl = document.getElementById(`coord-${zone.id}`);
+                        if (selectEl && selectEl.value) {
+                          onAssignCoord(req.assignment_id, selectEl.value, zone.id);
+                        }
+                      }}
+                      style={{
+                        padding: '6px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                        background: '#34b27b', color: '#fff', fontWeight: 600, fontSize: 12,
+                      }}>
+                      Assign
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
+          
           {coordinators.length === 0 && (
-            <p style={{ marginTop: 6, fontSize: 11, color: 'var(--color-text-muted)' }}>
+            <p style={{ marginTop: 10, fontSize: 11, color: 'var(--color-text-muted)' }}>
               No coordinators linked to your organization yet. Add coordinators via your Volunteers page.
             </p>
           )}
-        </div>
-      )}
-
-      {/* Show Assigned Coordinator Details */}
-      {isAccepted && req.assigned_coordinator_name && (
-        <div style={{ marginTop: 14, padding: 14, borderRadius: 10, background: 'var(--color-info-10)', border: '1px solid var(--color-primary)' }}>
-          <h4 style={{ margin: 0, fontSize: 13, color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>check_circle</span>
-            Coordinator Assigned
-          </h4>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 600 }}>
-            {req.assigned_coordinator_name}
-          </p>
         </div>
       )}
     </div>
@@ -193,8 +204,8 @@ export function OrgRequests() {
       rejectMutation.mutate(assignmentId);
     }
   };
-  const handleAssignCoord = (assignmentId, coordinator_id) => {
-    coordMutation.mutate({ assignmentId, coordinator_id });
+  const handleAssignCoord = (assignmentId, coordinator_id, zone_id) => {
+    coordMutation.mutate({ assignmentId, coordinator_id, zone_id });
   };
 
   const allReqs = Array.isArray(requests) ? requests : [];

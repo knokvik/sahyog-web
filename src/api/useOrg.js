@@ -149,9 +149,9 @@ export function useAssignCoordinator() {
     const { getToken } = useAuth();
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: ({ assignmentId, coordinator_id }) =>
+        mutationFn: ({ assignmentId, coordinator_id, zone_id }) =>
             apiRequest(apiPaths.orgAssignCoordinator(assignmentId), {
-                method: 'POST', body: JSON.stringify({ coordinator_id }),
+                method: 'POST', body: JSON.stringify({ coordinator_id, zone_id }),
             }, getToken),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ['org-requests'] });
