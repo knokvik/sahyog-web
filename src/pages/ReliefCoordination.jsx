@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useDisastersList, useSosList } from '../api/hooks';
+import { useDisastersList, useSosList, useUsersList } from '../api/hooks';
 import {
   useReliefZones, useCreateZone, useDeleteZone,
   useDisasterRequests, useCreateRequest, useAllOrganizations,
@@ -30,6 +30,7 @@ function MapClickHandler({ onMapClick, drawing }) {
 function ZoneMapTab({ disasterId }) {
   const { data: zones = [], isLoading } = useReliefZones(disasterId);
   const { data: sosAlerts = [] } = useSosList();
+  const { data: users = [] } = useUsersList();
   const createZone = useCreateZone(disasterId);
   const deleteZone = useDeleteZone(disasterId);
 
@@ -44,6 +45,13 @@ function ZoneMapTab({ disasterId }) {
     html: '<div class="sos-radar-blip"></div>',
     iconSize: [20, 20],
     iconAnchor: [10, 10], 
+  });
+
+  const volunteerIcon = new L.divIcon({
+    className: 'volunteer-marker-icon',
+    html: `<div style="background-color: #007bff; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.4);"></div>`,
+    iconSize: [14, 14],
+    iconAnchor: [7, 7]
   });
 
   const handleMapClick = useCallback((latlng) => {
@@ -133,6 +141,22 @@ function ZoneMapTab({ disasterId }) {
                   <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>Status: {s.status}</span><br/>
                   <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>Volunteer: {s.volunteer_name || 'Anonymous'}</span><br/>
                   <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{new Date(s.created_at).toLocaleString()}</span>
+                </Popup>
+              </Marker>
+            ))
+          }
+
+          {/* Volunteer Trackers */}
+          {users
+            .filter(u => u.lat != null && u.lng != null && u.role === 'volunteer' && u.is_active !== false)
+            .map(u => (
+              <Marker key={u.id} position={[u.lat, u.lng]} icon={volunteerIcon}>
+                <Popup>
+                  <strong style={{ color: '#007bff' }}>{u.full_name}</strong><br/>
+                  <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
+                    {u.is_assigned ? 'Status: Busy/Assigned' : 'Status: Free/Available'}
+                  </span><br/>
+                  <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{u.phone || 'No phone'}</span>
                 </Popup>
               </Marker>
             ))
