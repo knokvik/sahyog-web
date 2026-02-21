@@ -65,6 +65,18 @@ export function useSosTasks(sosId) {
   });
 }
 
+export function useDeleteSos() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) =>
+      apiRequest(apiPaths.sosDetail(id), { method: 'DELETE' }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sos', 'list'] });
+    },
+  });
+}
+
 export function useUpdateNeedStatus() {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();

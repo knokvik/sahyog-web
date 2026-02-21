@@ -59,6 +59,7 @@ export const apiPaths = {
   needAssign: (id) => `/api/v1/needs/${id}/assign`,
   needResolve: (id) => `/api/v1/needs/${id}/resolve`,
   sos: '/api/v1/sos',
+  sosDetail: (id) => `/api/v1/sos/${id}`,
   sosTasks: (id) => `/api/v1/sos/${id}/tasks`,
 
   disasters: '/api/v1/disasters',
