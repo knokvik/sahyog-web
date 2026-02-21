@@ -6,7 +6,6 @@ const roleOptions = [
     { value: 'volunteer', label: 'Volunteer' },
     { value: 'coordinator', label: 'Coordinator' },
     { value: 'admin', label: 'Admin' },
-    { value: 'organization', label: 'Organization' },
 ];
 
 const roleBadgeMap = {
@@ -34,7 +33,7 @@ export function UsersList() {
     if (isLoading) return <div className={styles.loading}>Loading users…</div>;
     if (error) return <div className={styles.error}>⚠️ Error: {error.message}</div>;
 
-    const allRows = Array.isArray(list) ? list : [];
+    const allRows = (Array.isArray(list) ? list : []).filter(r => r.role !== 'organization');
     const rows = filter === 'All' ? allRows : allRows.filter(r => r.role === filter);
 
     const roleToOrg = {
@@ -57,7 +56,7 @@ export function UsersList() {
             </div>
 
             <div className={styles.filterRow}>
-                {['All', 'admin', 'coordinator', 'volunteer', 'organization'].map(f => (
+                {['All', 'admin', 'coordinator', 'volunteer'].map(f => (
                     <button
                         key={f}
                         className={`${styles.filterPill} ${filter === f ? styles.filterPillActive : ''}`}
