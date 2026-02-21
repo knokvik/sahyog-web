@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useNeedsList, useUsersList, useCreateTask } from '../api/hooks';
+import { useSosList, useUsersList, useCreateTask } from '../api/hooks';
 import styles from './DataList.module.css';
 
-const filters = ['All', 'pending', 'in_progress', 'resolved', 'cancelled'];
+const filters = ['All', 'triggered', 'acknowledged', 'resolved'];
 
 function StatusBadge({ status }) {
   return <span className={`${styles.badge} ${styles[`badge_${status}`] || styles.badge_muted}`}>{status?.replace('_', ' ')}</span>;
@@ -153,7 +153,7 @@ function VolunteerActionsModal({ sosId, onClose }) {
 }
 
 export function SosList() {
-  const { data: list, isLoading, error } = useNeedsList();
+  const { data: list, isLoading, error } = useSosList();
   const [activeFilter, setActiveFilter] = useState('All');
   const [assigningSos, setAssigningSos] = useState(null);
 
@@ -196,8 +196,8 @@ export function SosList() {
             <tr>
               <th>ID</th>
               <th>Status</th>
-              <th>Type</th>
-              <th>Priority</th>
+              <th>Volunteer</th>
+              <th>Disaster</th>
               <th>Created</th>
               <th>Actions</th>
             </tr>
@@ -217,8 +217,8 @@ export function SosList() {
                 <tr key={row.id}>
                   <td><code className={styles.idCode}>#{row.id?.slice(0, 8)}</code></td>
                   <td><StatusBadge status={row.status} /></td>
-                  <td>{row.type ?? '—'}</td>
-                  <td style={{ fontWeight: 700 }}>{row.priority_score ?? '—'}</td>
+                  <td>{row.volunteer_name ?? '—'}</td>
+                  <td>{row.disaster_name ?? '—'}</td>
                   <td className={styles.timeCell}>{formatTime(row.created_at)}</td>
                   <td>
                     <button

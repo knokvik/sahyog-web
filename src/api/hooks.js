@@ -47,6 +47,15 @@ export function useNeedsList() {
   });
 }
 
+export function useSosList() {
+  const { getToken, isSignedIn } = useAuth();
+  return useQuery({
+    queryKey: ['sos', 'list'],
+    queryFn: () => apiRequest(apiPaths.sos, {}, getToken),
+    enabled: isSignedIn === true,
+  });
+}
+
 export function useUpdateNeedStatus() {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();

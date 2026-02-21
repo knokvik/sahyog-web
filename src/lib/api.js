@@ -90,4 +90,7 @@ export const apiPaths = {
   orgResources: '/api/v1/organizations/me/resources',
   orgTasks: '/api/v1/organizations/me/tasks',
   orgZones: '/api/v1/organizations/me/zones',
+
+  // SOS alerts
+  sos: '/api/v1/sos',
 };
