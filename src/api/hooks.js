@@ -56,6 +56,15 @@ export function useSosList() {
   });
 }
 
+export function useSosTasks(sosId) {
+  const { getToken, isSignedIn } = useAuth();
+  return useQuery({
+    queryKey: ['sos', sosId, 'tasks'],
+    queryFn: () => apiRequest(apiPaths.sosTasks(sosId), {}, getToken),
+    enabled: isSignedIn === true && !!sosId,
+  });
+}
+
 export function useUpdateNeedStatus() {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();

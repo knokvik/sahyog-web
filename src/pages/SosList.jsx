@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSosList, useUsersList, useCreateTask } from '../api/hooks';
+import { useSosList, useUsersList, useCreateTask, useSosTasks } from '../api/hooks';
 import styles from './DataList.module.css';
 
 const filters = ['All', 'triggered', 'acknowledged', 'resolved'];
@@ -15,7 +15,7 @@ function formatTime(dateStr) {
 
 function VolunteerActionsModal({ sosId, onClose }) {
   const { data: volunteers } = useUsersList();
-  const { data: assignedTasks, isLoading: tasksLoading } = { data: [], isLoading: false };
+  const { data: assignedTasks, isLoading: tasksLoading } = useSosTasks(sosId);
   const createTask = useCreateTask();
   
   const [selectedVolunteerId, setSelectedVolunteerId] = useState(null);
@@ -24,9 +24,8 @@ function VolunteerActionsModal({ sosId, onClose }) {
   const allVols = Array.isArray(volunteers) ? volunteers : [];
   const validTasks = Array.isArray(assignedTasks) ? assignedTasks : [];
 
-  // Filter out volunteers who are already assigned to this SOS
-  const assignedVolIds = new Set(validTasks.map(t => t.volunteer_id));
-  const freeVols = allVols.filter(v => v.is_verified && !assignedVolIds.has(v.id));
+  // Filter out volunteers who are busy with any other task
+  const freeVols = allVols.filter(v => v.role === 'volunteer' && v.is_active !== false && !v.is_assigned);
 
   const handleAssignClick = (volId) => {
     if (selectedVolunteerId === volId) {
@@ -41,7 +40,7 @@ function VolunteerActionsModal({ sosId, onClose }) {
   const handleSubmitAssign = (e, volunteerId) => {
     e.preventDefault();
     createTask.mutate(
-      { sosId, volunteerId, instructions: instructions || undefined },
+      { sosId, volunteer_id: volunteerId, type: 'sos_response', title: 'Respond to SOS Alert', description: instructions || undefined },
       { onSuccess: () => {
           setSelectedVolunteerId(null);
           setInstructions('');
@@ -76,7 +75,7 @@ function VolunteerActionsModal({ sosId, onClose }) {
                       <div className={styles.volunteerInfo}>
                         <span className={styles.volunteerName}>{task.volunteer_name || 'Unknown'}</span>
                         <span className={styles.volunteerTaskDesc}>
-                          {task.instructions ? `Task: ${task.instructions}` : 'No specific description provided'}
+                          {task.description ? `Task: ${task.description}` : 'No specific description provided'}
                         </span>
                       </div>
                       <StatusBadge status={task.status} />
