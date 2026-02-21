@@ -1,10 +1,12 @@
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { SignedIn, SignedOut, useClerk } from '@clerk/clerk-react';
 import { useMe } from '../api/hooks';
 
-function AdminGate({ children }) {
+function RoleGate({ children, allowedRoles }) {
   const { data: me, isLoading, error } = useMe();
   const { signOut } = useClerk();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   if (isLoading) {
     return (
@@ -27,13 +29,98 @@ function AdminGate({ children }) {
   }
 
   const role = me?.role;
-  if (role !== 'admin') {
+  const loginIntent = typeof window !== 'undefined' ? localStorage.getItem('loginIntent') : null;
+
+  // ─── Mismatch Detection ───────────────────────────────────────
+  // Admin user logged in via Organization toggle
+  if (role === 'admin' && loginIntent === 'org') {
+    return (
+      <div style={gateStyles.center}>
+        <span className="material-symbols-outlined" style={{ fontSize: 56, color: '#f59e0b' }}>swap_horiz</span>
+        <h2 style={gateStyles.title}>Wrong Portal</h2>
+        <p style={gateStyles.desc}>
+          This email is already registered as an <strong>Admin / Coordinator</strong> account.
+          You cannot use it to access the Organization portal.
+        </p>
+        <p style={gateStyles.hint}>
+          Please use a different email to register as an Organization, or switch to the Admin login.
+        </p>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button
+            style={{ ...gateStyles.btn, background: '#34b27b' }}
+            onClick={() => { localStorage.setItem('loginIntent', 'admin'); navigate('/'); }}
+          >
+            Go to Admin Panel
+          </button>
+          <button
+            style={{ ...gateStyles.btn, background: '#64748b' }}
+            onClick={() => { localStorage.removeItem('loginIntent'); signOut(); }}
+          >
+            Sign Out &amp; Use Another Email
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Organization user logged in via Admin toggle
+  if (role === 'organization' && loginIntent === 'admin') {
+    return (
+      <div style={gateStyles.center}>
+        <span className="material-symbols-outlined" style={{ fontSize: 56, color: '#f59e0b' }}>swap_horiz</span>
+        <h2 style={gateStyles.title}>Wrong Portal</h2>
+        <p style={gateStyles.desc}>
+          This email is already registered as an <strong>Organization</strong> account.
+          You cannot use it to access the Admin portal.
+        </p>
+        <p style={gateStyles.hint}>
+          Please use a different email to login as Admin, or switch to the Organization login.
+        </p>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button
+            style={{ ...gateStyles.btn, background: '#3b82f6' }}
+            onClick={() => { localStorage.setItem('loginIntent', 'org'); navigate(me?.organization_id ? '/org' : '/org-onboarding'); }}
+          >
+            Go to Organization Panel
+          </button>
+          <button
+            style={{ ...gateStyles.btn, background: '#64748b' }}
+            onClick={() => { localStorage.removeItem('loginIntent'); signOut(); }}
+          >
+            Sign Out &amp; Use Another Email
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Normal role-based routing ────────────────────────────────
+  // Organization role → redirect to org panel (or onboarding)
+  if (role === 'organization' && !allowedRoles?.includes('organization')) {
+    if (me?.organization_id) {
+      return <Navigate to="/org" replace />;
+    }
+    return <Navigate to="/org-onboarding" replace />;
+  }
+
+  // Volunteer/new user with organization intent → redirect to org onboarding
+  if (role !== 'admin' && role !== 'organization' && loginIntent === 'org' && !allowedRoles?.includes(role)) {
+    return <Navigate to="/org-onboarding" replace />;
+  }
+
+  // Admin role accessing org routes → redirect to admin
+  if (role === 'admin' && allowedRoles?.includes('organization') && !allowedRoles?.includes('admin')) {
+    return <Navigate to="/" replace />;
+  }
+
+  // Check if user role is allowed
+  if (allowedRoles && !allowedRoles.includes(role)) {
     return (
       <div style={gateStyles.center}>
         <span className="material-symbols-outlined" style={{ fontSize: 56, color: '#ef4444' }}>shield_lock</span>
         <h2 style={gateStyles.title}>Access Denied</h2>
         <p style={gateStyles.desc}>
-          This panel is restricted to <strong>administrators only</strong>.
+          You don't have permission to access this section.
         </p>
         <p style={gateStyles.roleInfo}>
           Your current role: <code style={gateStyles.roleCode}>{role || 'user'}</code>
@@ -119,12 +206,12 @@ const gateStyles = {
   },
 };
 
-export function ProtectedRoute({ children }) {
+export function ProtectedRoute({ children, allowedRoles = ['admin'] }) {
   const location = useLocation();
   return (
     <>
       <SignedIn>
-        <AdminGate>{children}</AdminGate>
+        <RoleGate allowedRoles={allowedRoles}>{children}</RoleGate>
       </SignedIn>
       <SignedOut>
         <Navigate to="/sign-in" state={{ from: location }} replace />
@@ -132,3 +219,4 @@ export function ProtectedRoute({ children }) {
     </>
   );
 }
+

@@ -1,0 +1,116 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@clerk/clerk-react';
+import { apiRequest, apiPaths } from '../lib/api';
+
+export function useOrgProfile() {
+    const { getToken } = useAuth();
+    return useQuery({
+        queryKey: ['org-profile'],
+        queryFn: () => apiRequest(apiPaths.orgMe, {}, getToken),
+    });
+}
+
+export function useOrgStats() {
+    const { getToken } = useAuth();
+    return useQuery({
+        queryKey: ['org-stats'],
+        queryFn: () => apiRequest(apiPaths.orgStats, {}, getToken),
+    });
+}
+
+export function useOrgVolunteers() {
+    const { getToken } = useAuth();
+    return useQuery({
+        queryKey: ['org-volunteers'],
+        queryFn: () => apiRequest(apiPaths.orgVolunteers, {}, getToken),
+    });
+}
+
+export function useOrgResources() {
+    const { getToken } = useAuth();
+    return useQuery({
+        queryKey: ['org-resources'],
+        queryFn: () => apiRequest(apiPaths.orgResources, {}, getToken),
+    });
+}
+
+export function useOrgTasks(status) {
+    const { getToken } = useAuth();
+    const path = status ? `${apiPaths.orgTasks}?status=${status}` : apiPaths.orgTasks;
+    return useQuery({
+        queryKey: ['org-tasks', status],
+        queryFn: () => apiRequest(path, {}, getToken),
+    });
+}
+
+export function useOrgZones() {
+    const { getToken } = useAuth();
+    return useQuery({
+        queryKey: ['org-zones'],
+        queryFn: () => apiRequest(apiPaths.orgZones, {}, getToken),
+    });
+}
+
+export function useRegisterOrg() {
+    const { getToken } = useAuth();
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (data) => apiRequest(apiPaths.orgRegister, {
+            method: 'POST', body: JSON.stringify(data),
+        }, getToken),
+        onSuccess: () => { qc.invalidateQueries({ queryKey: ['user-me'] }); },
+    });
+}
+
+export function useUpdateOrg() {
+    const { getToken } = useAuth();
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (data) => apiRequest(apiPaths.orgMe, {
+            method: 'PUT', body: JSON.stringify(data),
+        }, getToken),
+        onSuccess: () => { qc.invalidateQueries({ queryKey: ['org-profile'] }); },
+    });
+}
+
+export function useLinkVolunteer() {
+    const { getToken } = useAuth();
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (userId) => apiRequest(apiPaths.orgLinkVolunteer(userId), {
+            method: 'POST',
+        }, getToken),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['org-volunteers'] });
+            qc.invalidateQueries({ queryKey: ['org-stats'] });
+        },
+    });
+}
+
+export function useUnlinkVolunteer() {
+    const { getToken } = useAuth();
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (userId) => apiRequest(apiPaths.orgLinkVolunteer(userId), {
+            method: 'DELETE',
+        }, getToken),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['org-volunteers'] });
+            qc.invalidateQueries({ queryKey: ['org-stats'] });
+        },
+    });
+}
+
+export function useCreateOrgResource() {
+    const { getToken } = useAuth();
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (data) => apiRequest(apiPaths.orgResources, {
+            method: 'POST', body: JSON.stringify(data),
+        }, getToken),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['org-resources'] });
+            qc.invalidateQueries({ queryKey: ['org-stats'] });
+        },
+    });
+}

@@ -80,4 +80,14 @@ export const apiPaths = {
 
   serverStats: '/api/v1/server/stats',
   search: (query) => `/api/v1/search?q=${encodeURIComponent(query)}`,
+
+  // Organization endpoints
+  orgRegister: '/api/v1/organizations/register',
+  orgMe: '/api/v1/organizations/me',
+  orgStats: '/api/v1/organizations/me/stats',
+  orgVolunteers: '/api/v1/organizations/me/volunteers',
+  orgLinkVolunteer: (userId) => `/api/v1/organizations/me/volunteers/${userId}`,
+  orgResources: '/api/v1/organizations/me/resources',
+  orgTasks: '/api/v1/organizations/me/tasks',
+  orgZones: '/api/v1/organizations/me/zones',
 };
