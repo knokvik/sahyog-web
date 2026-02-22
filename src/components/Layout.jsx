@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { toggleSidebar, toggleTheme, selectTheme } from '../store/slices/uiSlice';
 import { useMe } from '../api/hooks';
 import { SearchResultsPopup } from './SearchResultsPopup';
+import BrandIcon from '../assets/favicon.svg';
 import styles from './Layout.module.css';
 
 const navItems = [
@@ -59,7 +60,7 @@ export function Layout() {
         {/* Brand */}
         <div className={styles.brand}>
           <div className={styles.brandIcon}>
-            <img src="../assets/favicon.svg" style={{ width: '1.5rem', height: '1.5rem' }} />
+            <img src={BrandIcon} style={{ width: '1.5rem', height: '1.5rem' }} />
           </div>
           {sidebarOpen && (
             <h2 className={styles.brandName}>ResQConnect</h2>
