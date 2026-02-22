@@ -14,9 +14,9 @@ export function RealtimeProvider({ children }) {
     useEffect(() => {
         if (!isLoaded || !isSignedIn) return;
 
-        const newSocket = io(window.location.origin, {
+        const socketUrl = import.meta.env.VITE_API_URL || window.location.origin;
+        const newSocket = io(socketUrl, {
             path: '/socket.io',
-            transports: ['websocket'],
         });
 
         newSocket.on('connect', () => {
