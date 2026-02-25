@@ -179,36 +179,33 @@ function ZoneMapTab({ disasterId, onOpenModal }) {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <button onClick={() => { setDrawing(!drawing); setClickCenter(null); }}
+            title={drawing ? "Cancel Drawing" : "Draw Zone"}
             style={{
-              display: 'flex', alignItems: 'center', gap: 10, padding: '14px 24px', borderRadius: 30,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', width: 48, height: 48, borderRadius: '50%',
               background: drawing ? '#64748b' : 'var(--color-primary)', color: 'white', border: 'none',
-              boxShadow: '0 6px 16px rgba(0,0,0,0.2)', cursor: 'pointer', fontWeight: 600, fontSize: 15,
-              transition: 'all 0.2s', width: 220, justifyContent: 'center'
+              boxShadow: '0 6px 16px rgba(0,0,0,0.2)', cursor: 'pointer', transition: 'all 0.2s'
             }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{drawing ? 'close' : 'draw'}</span>
-            {drawing ? 'Cancel Drawing' : 'Draw Zone'}
+            <span className="material-symbols-outlined" style={{ fontSize: 22 }}>{drawing ? 'close' : 'draw'}</span>
           </button>
 
           <button onClick={() => onOpenModal('request')}
+            title="Send Request"
             style={{
-              display: 'flex', alignItems: 'center', gap: 10, padding: '14px 24px', borderRadius: 30,
-              background: 'var(--color-surface)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)',
-              boxShadow: '0 6px 16px rgba(0,0,0,0.1)', cursor: 'pointer', fontWeight: 600, fontSize: 15,
-              transition: 'all 0.2s', width: 220, justifyContent: 'center'
+              display: 'flex', alignItems: 'center', justifyContent: 'center', width: 48, height: 48, borderRadius: '50%',
+              background: 'var(--color-surface)', color: 'var(--color-primary)', border: '1px solid var(--color-border)',
+              boxShadow: '0 6px 16px rgba(0,0,0,0.1)', cursor: 'pointer', transition: 'all 0.2s'
             }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 20, color: 'var(--color-primary)' }}>send</span>
-            Send Request
+            <span className="material-symbols-outlined" style={{ fontSize: 22 }}>send</span>
           </button>
 
           <button onClick={() => onOpenModal('progress')}
+            title="View Progress"
             style={{
-              display: 'flex', alignItems: 'center', gap: 10, padding: '14px 24px', borderRadius: 30,
-              background: 'var(--color-surface)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)',
-              boxShadow: '0 6px 16px rgba(0,0,0,0.1)', cursor: 'pointer', fontWeight: 600, fontSize: 15,
-              transition: 'all 0.2s', width: 220, justifyContent: 'center'
+              display: 'flex', alignItems: 'center', justifyContent: 'center', width: 48, height: 48, borderRadius: '50%',
+              background: 'var(--color-surface)', color: 'var(--color-info)', border: '1px solid var(--color-border)',
+              boxShadow: '0 6px 16px rgba(0,0,0,0.1)', cursor: 'pointer', transition: 'all 0.2s'
             }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 20, color: 'var(--color-info)' }}>monitoring</span>
-            View Progress
+            <span className="material-symbols-outlined" style={{ fontSize: 22 }}>monitoring</span>
           </button>
         </div>
       </div>
@@ -500,20 +497,18 @@ export function ReliefCoordination() {
       {/* Top Floating Bar for Disaster Selection */}
       <div style={{
         position: 'absolute', top: 16, left: 16, zIndex: 1000,
-        background: 'var(--color-surface)', padding: '12px 20px', borderRadius: 12,
+        background: 'var(--color-surface)', padding: '6px 16px', borderRadius: 30,
         boxShadow: '0 4px 12px rgba(0,0,0,0.1)', border: '1px solid var(--color-border)',
-        display: 'flex', alignItems: 'center', gap: 12
+        display: 'flex', alignItems: 'center', gap: 8
       }}>
-        <h1 style={{ margin: 0, fontSize: 18, color: 'var(--color-text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span className="material-symbols-outlined" style={{ color: 'var(--color-primary)' }}>volunteer_activism</span>
-          Relief Coordination
-        </h1>
-        <div style={{ width: 1, height: 24, background: 'var(--color-border)' }} />
-        <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)' }}>Disaster:</label>
+        <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span className="material-symbols-outlined" style={{ color: 'var(--color-primary)', fontSize: 18 }}>public</span>
+          Disaster:
+        </label>
         <select value={selectedDisaster} onChange={e => setSelectedDisaster(e.target.value)}
-          style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg)', color: 'var(--color-text-primary)', outline: 'none' }}>
+          style={{ padding: '4px 4px', borderRadius: 6, border: 'none', background: 'transparent', color: 'var(--color-text-primary)', outline: 'none', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>
           {loadingDisasters ? <option>Loading...</option> : activeDisasters.length === 0 ? <option>No active disasters</option> :
-            activeDisasters.map(d => <option key={d.id} value={d.id}>{d.name} ({d.type})</option>)
+            activeDisasters.map(d => <option key={d.id} value={d.id}>{d.name}</option>)
           }
         </select>
       </div>
