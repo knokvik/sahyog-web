@@ -188,6 +188,10 @@ a:hover {
   filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
 }
 
+[data-theme="dark"] .leaflet-container {
+  background: #1a1a1a !important;
+}
+
 /* Animations */
 @keyframes shimmer {
   0% {
@@ -288,8 +292,15 @@ a:hover {
 }
 
 @keyframes radar-ping {
-  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-  100% { transform: translate(-50%, -50%) scale(4); opacity: 0; }
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(-50%, -50%) scale(4);
+    opacity: 0;
+  }
 }
 
 .pulse-red {
@@ -311,6 +322,7 @@ a:hover {
     opacity: 0;
     transform: translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -322,6 +334,7 @@ a:hover {
     opacity: 0;
     transform: scale(0.92);
   }
+
   to {
     opacity: 1;
     transform: scale(1);

@@ -26,6 +26,41 @@ function MapClickHandler({ onMapClick, drawing }) {
   return null;
 }
 
+function ZoomDisplay() {
+  const [zoom, setZoom] = useState(11);
+  const map = useMapEvents({
+    zoomend: () => {
+      setZoom(map.getZoom());
+    },
+  });
+
+  const maxZoom = map.getMaxZoom() || 18;
+  const zoomPercent = Math.round((zoom / maxZoom) * 100);
+
+  return (
+    <div style={{
+      position: 'absolute',
+      bottom: '16px',
+      left: '16px',
+      zIndex: 1000,
+      background: 'var(--color-surface)',
+      padding: '6px 12px',
+      borderRadius: '20px',
+      boxShadow: 'var(--shadow-md)',
+      border: '1px solid var(--color-border)',
+      fontSize: '11px',
+      fontWeight: '600',
+      color: 'var(--color-text-primary)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px'
+    }}>
+      <span className="material-symbols-outlined" style={{ fontSize: '14px', color: 'var(--color-primary)' }}>zoom_in</span>
+      {zoomPercent >= 100 ? '100% ZOOM' : `${zoomPercent}% ZOOM`}
+    </div>
+  );
+}
+
 /* ─── Zone Map Tab ─────────────────────────────────────────── */
 function ZoneMapTab({ disasterId, onOpenModal }) {
   const { data: zones = [], isLoading } = useReliefZones(disasterId);
@@ -83,6 +118,7 @@ function ZoneMapTab({ disasterId, onOpenModal }) {
             attribution='&copy; OpenStreetMap'
           />
           <MapClickHandler onMapClick={handleMapClick} drawing={drawing} />
+          <ZoomDisplay />
 
           {/* Existing zones */}
           {zones.map(z => {
