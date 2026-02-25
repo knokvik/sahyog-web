@@ -21,13 +21,13 @@ const DEFAULT_ITEMS = [
 function MapClickHandler({ onMapClick, drawing }) {
   useMapEvents({
     click(e) { if (drawing) onMapClick(e.latlng); },
-    mousemove() {},
+    mousemove() { },
   });
   return null;
 }
 
 /* ─── Zone Map Tab ─────────────────────────────────────────── */
-function ZoneMapTab({ disasterId }) {
+function ZoneMapTab({ disasterId, onOpenModal }) {
   const { data: zones = [], isLoading } = useReliefZones(disasterId);
   const { data: sosAlerts = [] } = useSosList();
   const { data: users = [] } = useUsersList();
@@ -44,7 +44,7 @@ function ZoneMapTab({ disasterId }) {
     className: 'sos-radar-blip-container',
     html: '<div class="sos-radar-blip"></div>',
     iconSize: [20, 20],
-    iconAnchor: [10, 10], 
+    iconAnchor: [10, 10],
   });
 
   const volunteerIcon = new L.divIcon({
@@ -68,48 +68,16 @@ function ZoneMapTab({ disasterId }) {
       center_lat: clickCenter.lat,
       radius_meters: radius,
     }, {
-      onSuccess: () => { setClickCenter(null); setZoneName(''); },
+      onSuccess: () => { setClickCenter(null); setZoneName(''); setDrawing(false); },
     });
   };
 
   return (
-    <div>
-      {/* Controls */}
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
-        <button
-          className={styles.submitBtn}
-          style={{ background: drawing ? '#64748b' : 'var(--color-primary)' }}
-          onClick={() => { setDrawing(!drawing); setClickCenter(null); }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>{drawing ? 'close' : 'draw'}</span>
-          {drawing ? 'Cancel Drawing' : 'Draw Zone'}
-        </button>
-
-        {drawing && (
-          <>
-            <div style={{ display: 'flex', gap: 6 }}>
-              {Object.entries(SEVERITY_COLORS).map(([key, color]) => (
-                <button key={key} onClick={() => setSeverity(key)} style={{
-                  padding: '6px 14px', borderRadius: 8, border: severity === key ? `2px solid ${color}` : '1px solid var(--color-border)',
-                  background: severity === key ? color + '20' : 'var(--color-surface)',
-                  color: color, fontWeight: 700, fontSize: 12, cursor: 'pointer',
-                }}>
-                  {SEVERITY_LABELS[key]}
-                </button>
-              ))}
-            </div>
-            <label style={{ fontSize: 13, color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-              Radius: {radius}m
-              <input type="range" min={100} max={5000} step={100} value={radius} onChange={e => setRadius(+e.target.value)}
-                style={{ width: 120 }} />
-            </label>
-          </>
-        )}
-      </div>
+    <div style={{ height: '100%', width: '100%', position: 'relative' }}>
 
       {/* Map */}
-      <div style={{ height: 450, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--color-border)' }}>
-        <MapContainer center={[19.076, 72.877]} zoom={11} style={{ height: '100%', width: '100%' }}>
+      <div style={{ height: '100%', width: '100%' }}>
+        <MapContainer center={[19.076, 72.877]} zoom={11} style={{ height: '100%', width: '100%', zIndex: 1, position: 'absolute' }}>
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; OpenStreetMap'
@@ -137,9 +105,9 @@ function ZoneMapTab({ disasterId }) {
             .map(s => (
               <Marker key={s.id} position={[s.lat, s.lng]} icon={sosIcon}>
                 <Popup>
-                  <strong style={{ color: 'var(--color-danger)' }}>SOS Alert</strong><br/>
-                  <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>Status: {s.status}</span><br/>
-                  <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>Volunteer: {s.volunteer_name || 'Anonymous'}</span><br/>
+                  <strong style={{ color: 'var(--color-danger)' }}>SOS Alert</strong><br />
+                  <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>Status: {s.status}</span><br />
+                  <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>Volunteer: {s.volunteer_name || 'Anonymous'}</span><br />
                   <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{new Date(s.created_at).toLocaleString()}</span>
                 </Popup>
               </Marker>
@@ -152,10 +120,10 @@ function ZoneMapTab({ disasterId }) {
             .map(u => (
               <Marker key={u.id} position={[u.lat, u.lng]} icon={volunteerIcon}>
                 <Popup>
-                  <strong style={{ color: '#007bff' }}>{u.full_name}</strong><br/>
+                  <strong style={{ color: '#007bff' }}>{u.full_name}</strong><br />
                   <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
                     {u.is_assigned ? 'Status: Busy/Assigned' : 'Status: Free/Available'}
-                  </span><br/>
+                  </span><br />
                   <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{u.phone || 'No phone'}</span>
                 </Popup>
               </Marker>
@@ -174,43 +142,129 @@ function ZoneMapTab({ disasterId }) {
         </MapContainer>
       </div>
 
-      {/* Create zone form */}
-      {clickCenter && (
-        <div style={{ marginTop: 12, padding: 16, background: 'var(--color-surface)', borderRadius: 12, border: '1px solid var(--color-border)', display: 'flex', gap: 12, alignItems: 'center' }}>
-          <input value={zoneName} onChange={e => setZoneName(e.target.value)} placeholder="Zone Name"
-            style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--color-border)', background: 'var(--color-bg)', color: 'var(--color-text-primary)', fontSize: 14 }} />
-          <span style={{ fontSize: 12, color: SEVERITY_COLORS[severity], fontWeight: 700 }}>{SEVERITY_LABELS[severity]}</span>
-          <button className={styles.submitBtn} onClick={handleCreateZone} disabled={createZone.isPending}>
-            {createZone.isPending ? 'Creating...' : 'Create Zone'}
+      {/* Floating Action Buttons Area (Bottom Right) */}
+      <div style={{ position: 'absolute', bottom: 32, right: 32, zIndex: 1000, display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'flex-end' }}>
+
+        {/* Drawing tools flyout if drawing */}
+        {drawing && !clickCenter && (
+          <div style={{ background: 'var(--color-bg)', padding: 16, borderRadius: 16, boxShadow: '0 8px 24px rgba(0,0,0,0.15)', border: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 8, minWidth: 280 }}>
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: 8 }}>Zone Severity</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                {Object.entries(SEVERITY_COLORS).map(([key, color]) => (
+                  <button key={key} onClick={() => setSeverity(key)} style={{
+                    padding: '8px 0', borderRadius: 8, border: severity === key ? `2px solid ${color}` : '1px solid var(--color-border)',
+                    background: severity === key ? color + '15' : 'var(--color-surface)',
+                    color: color, fontWeight: 600, fontSize: 12, cursor: 'pointer',
+                  }}>
+                    {SEVERITY_LABELS[key].split(' ')[0]}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span>Zone Radius</span>
+                <span style={{ color: 'var(--color-primary)' }}>{radius}m</span>
+              </label>
+              <input type="range" min={100} max={5000} step={100} value={radius} onChange={e => setRadius(+e.target.value)}
+                style={{ width: '100%', accentColor: 'var(--color-primary)' }} />
+            </div>
+            <div style={{ padding: '8px 12px', background: 'var(--color-info-10)', borderRadius: 8, color: 'var(--color-info)', fontSize: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>touch_app</span>
+              Click anywhere on the map to place the zone.
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <button onClick={() => { setDrawing(!drawing); setClickCenter(null); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10, padding: '14px 24px', borderRadius: 30,
+              background: drawing ? '#64748b' : 'var(--color-primary)', color: 'white', border: 'none',
+              boxShadow: '0 6px 16px rgba(0,0,0,0.2)', cursor: 'pointer', fontWeight: 600, fontSize: 15,
+              transition: 'all 0.2s', width: 220, justifyContent: 'center'
+            }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{drawing ? 'close' : 'draw'}</span>
+            {drawing ? 'Cancel Drawing' : 'Draw Zone'}
+          </button>
+
+          <button onClick={() => onOpenModal('request')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10, padding: '14px 24px', borderRadius: 30,
+              background: 'var(--color-surface)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)',
+              boxShadow: '0 6px 16px rgba(0,0,0,0.1)', cursor: 'pointer', fontWeight: 600, fontSize: 15,
+              transition: 'all 0.2s', width: 220, justifyContent: 'center'
+            }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 20, color: 'var(--color-primary)' }}>send</span>
+            Send Request
+          </button>
+
+          <button onClick={() => onOpenModal('progress')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10, padding: '14px 24px', borderRadius: 30,
+              background: 'var(--color-surface)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)',
+              boxShadow: '0 6px 16px rgba(0,0,0,0.1)', cursor: 'pointer', fontWeight: 600, fontSize: 15,
+              transition: 'all 0.2s', width: 220, justifyContent: 'center'
+            }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 20, color: 'var(--color-info)' }}>monitoring</span>
+            View Progress
           </button>
         </div>
-      )}
+      </div>
 
-      {/* Zone list */}
-      <div style={{ marginTop: 16 }}>
-        <h4 style={{ margin: 0, fontSize: 14, color: 'var(--color-text-secondary)', marginBottom: 8 }}>
-          Created Zones ({zones.length})
-        </h4>
-        {zones.length === 0 ? (
-          <p style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>No zones created yet. Click "Draw Zone" and click on the map to create one.</p>
-        ) : (
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {zones.map(z => (
-              <div key={z.id} style={{
-                padding: '8px 14px', borderRadius: 8, background: 'var(--color-surface)',
-                border: `1px solid ${SEVERITY_COLORS[z.severity] || 'var(--color-border)'}`,
-                display: 'flex', alignItems: 'center', gap: 10, fontSize: 13,
-              }}>
-                <span style={{ width: 10, height: 10, borderRadius: '50%', background: SEVERITY_COLORS[z.severity] }} />
-                <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{z.name}</span>
-                <span style={{ color: 'var(--color-text-muted)', fontSize: 11 }}>{z.radius_meters}m</span>
-                <button onClick={() => deleteZone.mutate(z.id)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: 'var(--color-text-muted)' }}
-                  title="Delete zone">
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
-                </button>
+      {/* Confirmation Overlay for Drawing & Delete List */}
+      <div style={{ position: 'absolute', bottom: 32, left: 32, zIndex: 1000, display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+        {/* Existing Zones List for deletion context */}
+        {!drawing && zones.length > 0 && (
+          <div style={{ background: 'var(--color-surface)', padding: '12px 16px', borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', border: '1px solid var(--color-border)', maxWidth: 300, maxHeight: 200, overflowY: 'auto' }}>
+            <h4 style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--color-text-secondary)', fontWeight: 600 }}>Active Zones</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {zones.map(z => (
+                <div key={z.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: SEVERITY_COLORS[z.severity] }} />
+                    <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>{z.name}</span>
+                  </div>
+                  <button onClick={() => deleteZone.mutate(z.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', display: 'flex' }} title="Delete zone">
+                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Create Zone Dialog */}
+        {clickCenter && drawing && (
+          <div style={{
+            background: 'var(--color-bg)', padding: 20, borderRadius: 16, boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+            border: '1px solid var(--color-border)', width: 320, animation: 'slideUp 0.3s ease'
+          }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: 16, color: 'var(--color-text-primary)' }}>Confirm Zone Details</h3>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 4, display: 'block' }}>Zone Name</label>
+              <input type="text" value={zoneName} onChange={e => setZoneName(e.target.value)}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-text-primary)', outline: 'none' }}
+                placeholder="E.g. Flood Zone A" />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, padding: 12, background: 'var(--color-surface)', borderRadius: 8, border: '1px solid var(--color-border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 12, height: 12, borderRadius: '50%', background: SEVERITY_COLORS[severity] }} />
+                <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--color-text-primary)' }}>{SEVERITY_LABELS[severity]}</span>
               </div>
-            ))}
+              <span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>{radius}m radius</span>
+            </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button onClick={() => setClickCenter(null)} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-text-primary)', cursor: 'pointer', fontWeight: 600 }}>Cancel</button>
+              <button onClick={handleCreateZone} disabled={createZone.isPending} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--color-primary)', color: 'white', cursor: 'pointer', fontWeight: 600 }}>
+                {createZone.isPending ? 'Creating...' : 'Create Zone'}
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -430,7 +484,7 @@ function ProgressTab({ disasterId }) {
 export function ReliefCoordination() {
   const { data: disasters = [], isLoading: loadingDisasters } = useDisastersList();
   const [selectedDisaster, setSelectedDisaster] = useState('');
-  const [activeTab, setActiveTab] = useState('map');
+  const [activeModal, setActiveModal] = useState(null);
 
   const activeDisasters = disasters.filter(d => d.status === 'active' || d.status === 'monitoring');
 
@@ -438,62 +492,71 @@ export function ReliefCoordination() {
     if (activeDisasters.length > 0 && !selectedDisaster) {
       setSelectedDisaster(activeDisasters[0].id);
     }
-  }, [activeDisasters]);
-
-  const tabs = [
-    { id: 'map', label: 'Zone Map', icon: 'map' },
-    { id: 'request', label: 'Send Request', icon: 'send' },
-    { id: 'progress', label: 'Progress', icon: 'monitoring' },
-  ];
+  }, [activeDisasters, selectedDisaster]);
 
   return (
-    <div className={styles.page}>
-      <div className={styles.pageHeader}>
-        <div className={styles.pageHeaderLeft}>
-          <h1 className={styles.title}>
-            <span className="material-symbols-outlined" style={{ fontSize: 24, color: 'var(--color-primary)' }}>volunteer_activism</span>
-            Relief Coordination
-          </h1>
-          <p className={styles.subtitle}>Manage disaster zones, send resource requests to NGOs, and track fulfillment</p>
-        </div>
-      </div>
+    <div style={{ margin: '-24px', position: 'relative', height: 'calc(100vh - 61px)', width: 'calc(100% + 48px)', display: 'flex', flexDirection: 'column', background: 'var(--color-bg)', overflow: 'hidden' }}>
 
-      {/* Disaster selector */}
-      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+      {/* Top Floating Bar for Disaster Selection */}
+      <div style={{
+        position: 'absolute', top: 16, left: 16, zIndex: 1000,
+        background: 'var(--color-surface)', padding: '12px 20px', borderRadius: 12,
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)', border: '1px solid var(--color-border)',
+        display: 'flex', alignItems: 'center', gap: 12
+      }}>
+        <h1 style={{ margin: 0, fontSize: 18, color: 'var(--color-text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="material-symbols-outlined" style={{ color: 'var(--color-primary)' }}>volunteer_activism</span>
+          Relief Coordination
+        </h1>
+        <div style={{ width: 1, height: 24, background: 'var(--color-border)' }} />
         <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)' }}>Disaster:</label>
-        <select value={selectedDisaster} onChange={e => setSelectedDisaster(e.target.value)} className={styles.select}
-          style={{ minWidth: 250 }}>
+        <select value={selectedDisaster} onChange={e => setSelectedDisaster(e.target.value)}
+          style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg)', color: 'var(--color-text-primary)', outline: 'none' }}>
           {loadingDisasters ? <option>Loading...</option> : activeDisasters.length === 0 ? <option>No active disasters</option> :
             activeDisasters.map(d => <option key={d.id} value={d.id}>{d.name} ({d.type})</option>)
           }
         </select>
       </div>
 
-      {/* Tabs */}
-      <div className={styles.filterRow} style={{ marginBottom: 20 }}>
-        {tabs.map(t => (
-          <button key={t.id}
-            className={`${styles.filterPill} ${activeTab === t.id ? styles.filterPillActive : ''}`}
-            onClick={() => setActiveTab(t.id)}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{t.icon}</span>
-            {t.label}
-          </button>
-        ))}
+      {/* Fullscreen Map */}
+      <div style={{ flex: 1, width: '100%', position: 'relative' }}>
+        {selectedDisaster ? (
+          <ZoneMapTab disasterId={selectedDisaster} onOpenModal={setActiveModal} />
+        ) : (
+          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-surface)' }}>
+            <div style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 48, opacity: 0.5 }}>warning</span>
+              <p>Select or create an active disaster first</p>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Tab content */}
-      {!selectedDisaster ? (
-        <div className={styles.emptyState}>
-          <span className="material-symbols-outlined" style={{ fontSize: 36, opacity: 0.3 }}>warning</span>
-          <p className={styles.emptyText}>Select or create an active disaster first</p>
+      {/* Modals Overlay */}
+      {activeModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999,
+          background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 24
+        }}>
+          <div style={{
+            background: 'var(--color-bg)', borderRadius: 16, width: '100%', maxWidth: 800, maxHeight: '90vh',
+            display: 'flex', flexDirection: 'column', boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
+          }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--color-surface)', borderRadius: '16px 16px 0 0' }}>
+              <h2 style={{ margin: 0, fontSize: 18, color: 'var(--color-text-primary)' }}>
+                {activeModal === 'request' ? 'Send Resource Request' : 'Resource Fulfillment Progress'}
+              </h2>
+              <button onClick={() => setActiveModal(null)} style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--color-text-muted)' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>close</span>
+              </button>
+            </div>
+            <div style={{ padding: 24, overflowY: 'auto', flex: 1 }}>
+              {activeModal === 'request' && <RequestFormTab disasterId={selectedDisaster} onClose={() => setActiveModal(null)} />}
+              {activeModal === 'progress' && <ProgressTab disasterId={selectedDisaster} />}
+            </div>
+          </div>
         </div>
-      ) : (
-        <>
-          {activeTab === 'map' && <ZoneMapTab disasterId={selectedDisaster} />}
-          {activeTab === 'request' && <RequestFormTab disasterId={selectedDisaster} />}
-          {activeTab === 'progress' && <ProgressTab disasterId={selectedDisaster} />}
-        </>
       )}
     </div>
   );
