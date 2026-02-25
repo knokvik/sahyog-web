@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import io from 'socket.io-client';
 import { useAuth } from '@clerk/clerk-react';
@@ -42,6 +42,41 @@ function MapRecenter({ center }) {
         }
     }, [center, map]);
     return null;
+}
+
+function ZoomDisplay() {
+    const [zoom, setZoom] = useState(13);
+    const map = useMapEvents({
+        zoomend: () => {
+            setZoom(map.getZoom());
+        },
+    });
+
+    const maxZoom = map.getMaxZoom() || 18;
+    const zoomPercent = Math.round((zoom / maxZoom) * 100);
+
+    return (
+        <div style={{
+            position: 'absolute',
+            bottom: '24px',
+            left: '24px',
+            zIndex: 1000,
+            background: 'var(--color-surface)',
+            padding: '6px 12px',
+            borderRadius: '20px',
+            boxShadow: 'var(--shadow-md)',
+            border: '1px solid var(--color-border)',
+            fontSize: '12px',
+            fontWeight: '600',
+            color: 'var(--color-text-primary)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+        }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--color-primary)' }}>zoom_in</span>
+            {zoomPercent >= 100 ? '100% ZOOM' : `${zoomPercent}% ZOOM`}
+        </div>
+    );
 }
 
 export function LiveMap() {
@@ -143,6 +178,7 @@ export function LiveMap() {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
                 <MapRecenter center={mapCenter} />
+                <ZoomDisplay />
 
                 {/* SOS Alerts */}
                 {alertList.map(alert => {
