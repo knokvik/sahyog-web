@@ -265,6 +265,7 @@ export function LiveMap() {
                 lat={selectedAlertFor3D?.lat}
                 lng={selectedAlertFor3D?.lng}
                 alertInfo={selectedAlertFor3D}
+                extraMarkers={[...alertList, ...volList]}
             />
         </div>
     );

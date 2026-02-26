@@ -38,6 +38,7 @@ function MapController({ center, zoom }) {
 
 const SOSDashboard = () => {
     const [alerts, setAlerts] = useState({});
+    const [volunteers, setVolunteers] = useState({});
     const [selectedAlert, setSelectedAlert] = useState(null);
     const [selectedAlertFor3D, setSelectedAlertFor3D] = useState(null);
     const [mapCenter, setMapCenter] = useState([18.5204, 73.8567]);
@@ -61,6 +62,21 @@ const SOSDashboard = () => {
             })
             .catch(err => console.error('Failed to fetch initial SOS alerts:', err));
 
+        // Fetch volunteers
+        apiRequest(apiPaths.users, {}, getToken)
+            .then(data => {
+                if (Array.isArray(data)) {
+                    const liveVols = {};
+                    data.forEach(user => {
+                        if (user.role === 'volunteer' && user.lat && user.lng) {
+                            liveVols[user.id] = user;
+                        }
+                    });
+                    setVolunteers(liveVols);
+                }
+            })
+            .catch(err => console.error('Failed to fetch volunteers:', err));
+
         // Socket logic
         const socket = io(window.location.origin, {
             path: '/socket.io',
@@ -79,10 +95,17 @@ const SOSDashboard = () => {
             });
         });
 
+        socket.on('volunteer_location_update', (data) => {
+            if (data.role === 'volunteer') {
+                setVolunteers(prev => ({ ...prev, [data.id]: data }));
+            }
+        });
+
         return () => socket.disconnect();
     }, [isLoaded, isSignedIn, getToken]);
 
     const alertList = Object.values(alerts).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const volList = Object.values(volunteers);
 
     const handleSelectAlert = (alert) => {
         setSelectedAlert(alert);
@@ -115,8 +138,8 @@ const SOSDashboard = () => {
                                 key={alert.id}
                                 onClick={() => handleSelectAlert(alert)}
                                 className={`p-4 rounded-xl cursor-pointer transition-all border ${selectedAlert?.id === alert.id
-                                        ? 'bg-red-500/10 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]'
-                                        : 'bg-white/5 border-white/10 hover:bg-white/10'
+                                    ? 'bg-red-500/10 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]'
+                                    : 'bg-white/5 border-white/10 hover:bg-white/10'
                                     }`}
                             >
                                 <div className="flex justify-between items-start mb-2">
@@ -216,6 +239,7 @@ const SOSDashboard = () => {
                 lat={selectedAlertFor3D?.lat}
                 lng={selectedAlertFor3D?.lng}
                 alertInfo={selectedAlertFor3D}
+                extraMarkers={[...alertList, ...volList]}
             />
         </div>
     );
