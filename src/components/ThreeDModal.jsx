@@ -39,14 +39,7 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
 
                 viewerRef.current = viewer;
 
-                // --- 🎮 ADVANCED CONTROL OPTIMIZATION ---
-                viewer.scene.screenSpaceCameraController.lookEventTypes = [Cesium.CameraEventType.LEFT_DRAG];
-                viewer.scene.screenSpaceCameraController.rotateEventTypes = [Cesium.CameraEventType.LEFT_DRAG];
-                viewer.scene.screenSpaceCameraController.translateEventTypes = [
-                    Cesium.CameraEventType.RIGHT_DRAG,
-                    Cesium.CameraEventType.MIDDLE_DRAG
-                ];
-
+                // --- 🏢 LOCALIZED CONSTRAINTS & REALISM ---
                 viewer.scene.screenSpaceCameraController.maximumZoomDistance = 1500;
                 viewer.scene.screenSpaceCameraController.minimumZoomDistance = 5;
 
@@ -56,6 +49,8 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                 viewer.scene.highDynamicRange = true;
                 viewer.scene.postProcessStages.fxaa.enabled = true;
 
+                // --- 🧱 GOOGLE PHOTOREALISTIC 3D TILES ---
+                // Asset ID 2275207 is the standard ID for Google's official Photorealistic 3D Tiles on Cesium Ion
                 const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2275207);
                 viewer.scene.primitives.add(tileset);
 
@@ -100,24 +95,24 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                     });
                 });
 
-                // --- 🎥 INITIAL ANIMATION ---
+                // --- 🎥 CAMERA INITIALIZATION ---
                 viewer.camera.setView({
-                    destination: Cesium.Cartesian3.fromDegrees(lng, lat, 500),
+                    destination: Cesium.Cartesian3.fromDegrees(lng, lat, 600),
                     orientation: { heading: 0, pitch: Cesium.Math.toRadians(-90), roll: 0 }
                 });
 
                 viewer.camera.flyTo({
-                    destination: Cesium.Cartesian3.fromDegrees(lng, lat, 60),
+                    destination: Cesium.Cartesian3.fromDegrees(lng, lat, 100),
                     orientation: {
                         heading: Cesium.Math.toRadians(0),
-                        pitch: Cesium.Math.toRadians(-20.0),
+                        pitch: Cesium.Math.toRadians(-25.0),
                         roll: 0.0
                     },
                     duration: 3
                 });
 
             } catch (error) {
-                console.error('Cesium UX Error:', error);
+                console.error('Cesium Google Integration Error:', error);
                 setIsLoading(false);
             }
         };
@@ -137,8 +132,8 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
     const flyToReset = () => {
         if (!viewerRef.current) return;
         viewerRef.current.camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(lng, lat, 60),
-            orientation: { heading: 0, pitch: Cesium.Math.toRadians(-20), roll: 0 },
+            destination: Cesium.Cartesian3.fromDegrees(lng, lat, 100),
+            orientation: { heading: 0, pitch: Cesium.Math.toRadians(-25), roll: 0 },
             duration: 1.5
         });
     };
@@ -163,12 +158,18 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
         viewerRef.current.camera.rotateRight(Cesium.Math.toRadians(45));
     };
 
-    const resetNorth = () => {
+    const openStreetView = () => {
+        const url = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
+        window.open(url, '_blank');
+    };
+
+    const setHeading = (degrees) => {
         if (!viewerRef.current) return;
+        const camera = viewerRef.current.camera;
         viewerRef.current.camera.flyTo({
-            destination: viewerRef.current.camera.position,
-            orientation: { heading: 0, pitch: viewerRef.current.camera.pitch, roll: 0 },
-            duration: 0.8
+            destination: camera.position,
+            orientation: { heading: Cesium.Math.toRadians(degrees), pitch: camera.pitch, roll: 0 },
+            duration: 0.8,
         });
     };
 
@@ -176,55 +177,73 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-md p-2 md:p-6 lg:p-8">
-            <div className="relative w-full h-full max-w-[1400px] bg-zinc-950 rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col border border-white/5">
+            <div className="relative w-full h-full max-w-[1400px] bg-zinc-950 rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col border border-white/5">
 
                 {/* 🏷️ PREMIMUM HEADER */}
                 <div className="absolute top-0 inset-x-0 z-20 flex items-center justify-between p-6 pointer-events-none">
                     <div className="flex flex-col gap-1 pointer-events-auto">
-                        <div className="flex items-center gap-3 bg-black/40 backdrop-blur-md p-2 px-4 rounded-xl border border-white/10">
+                        <div className="flex items-center gap-3 bg-black/60 backdrop-blur-xl p-2 px-4 rounded-xl border border-white/10 shadow-xl">
                             <span className="material-symbols-outlined text-red-500 animate-pulse">emergency</span>
-                            <span className="text-white font-bold tracking-tight">VIRTUAL COMMAND</span>
+                            <span className="text-white font-black tracking-widest text-xs">VIRTUAL COMMAND</span>
                             <div className="w-[1px] h-4 bg-white/20 mx-1" />
-                            <span className="text-zinc-400 text-sm">{alertInfo?.reporter_name || 'ACTIVE SOS'}</span>
+                            <span className="text-zinc-300 text-xs font-medium uppercase tracking-wider">{alertInfo?.reporter_name || 'ACTIVE SOS'}</span>
                         </div>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="pointer-events-auto w-12 h-12 flex items-center justify-center bg-black/40 backdrop-blur-md hover:bg-red-500/80 rounded-2xl border border-white/10 transition-all duration-300 group"
-                    >
-                        <span className="material-symbols-outlined text-white/70 group-hover:text-white group-hover:rotate-90 transition-transform">close</span>
-                    </button>
+                    <div className="flex gap-3 pointer-events-auto">
+                        <button
+                            onClick={openStreetView}
+                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold px-4 rounded-xl border border-white/20 transition-all shadow-lg active:scale-95 group"
+                        >
+                            <span className="material-symbols-outlined text-sm group-hover:animate-bounce">streetview</span>
+                            OFFICIAL STREET VIEW
+                        </button>
+                        <button
+                            onClick={onClose}
+                            className="w-10 h-10 flex items-center justify-center bg-black/60 backdrop-blur-xl hover:bg-red-500/80 rounded-xl border border-white/10 transition-all group shadow-lg"
+                        >
+                            <span className="material-symbols-outlined text-white/70 group-hover:text-white group-hover:rotate-90 transition-all text-sm">close</span>
+                        </button>
+                    </div>
                 </div>
 
                 {/* 🎮 FLOATING NAVIGATION BAR */}
-                <div className="absolute left-6 bottom-20 z-20 flex flex-col gap-3 pointer-events-auto">
-                    <button onClick={zoomIn} className="nav-btn" title="Zoom In"><span className="material-symbols-outlined">add</span></button>
-                    <button onClick={zoomOut} className="nav-btn" title="Zoom Out"><span className="material-symbols-outlined">remove</span></button>
-                    <div className="w-8 h-[1px] bg-white/10 mx-auto my-1" />
-                    <button onClick={rotateLeft} className="nav-btn" title="Rotate Left"><span className="material-symbols-outlined">rotate_left</span></button>
-                    <button onClick={rotateRight} className="nav-btn" title="Rotate Right"><span className="material-symbols-outlined">rotate_right</span></button>
-                    <div className="w-8 h-[1px] bg-white/10 mx-auto my-1" />
-                    <button onClick={resetNorth} className="nav-btn" title="Reset North"><span className="material-symbols-outlined">explore</span></button>
-                    <button onClick={flyToReset} title="Reset to SOS" className="w-12 h-12 flex items-center justify-center bg-red-500/20 hover:bg-red-500/40 text-red-500 rounded-2xl border border-red-500/30 transition-all backdrop-blur-md">
-                        <span className="material-symbols-outlined">my_location</span>
-                    </button>
+                <div className="absolute left-6 bottom-10 z-20 flex flex-col gap-3 pointer-events-auto">
+                    <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-1.5 border border-white/10 shadow-2xl flex flex-col gap-2">
+                        <button onClick={zoomIn} className="nav-btn" title="Zoom In"><span className="material-symbols-outlined text-lg">add</span></button>
+                        <button onClick={zoomOut} className="nav-btn" title="Zoom Out"><span className="material-symbols-outlined text-lg">remove</span></button>
+                        <div className="h-[1px] bg-white/5 mx-2" />
+                        <button onClick={rotateLeft} className="nav-btn" title="Rotate Left"><span className="material-symbols-outlined text-lg">rotate_left</span></button>
+                        <button onClick={rotateRight} className="nav-btn" title="Rotate Right"><span className="material-symbols-outlined text-lg">rotate_right</span></button>
+                        <div className="h-[1px] bg-white/5 mx-2" />
+                        <div className="flex flex-col items-center gap-1.5 py-2">
+                            <span className="text-[9px] text-zinc-500 font-bold tracking-[0.2em] uppercase">Dir</span>
+                            <div className="grid grid-cols-2 gap-1 px-1">
+                                <button onClick={() => setHeading(0)} className="nav-comp-btn">N</button>
+                                <button onClick={() => setHeading(90)} className="nav-comp-btn">E</button>
+                                <button onClick={() => setHeading(180)} className="nav-comp-btn">S</button>
+                                <button onClick={() => setHeading(270)} className="nav-comp-btn">W</button>
+                            </div>
+                        </div>
+                        <div className="h-[1px] bg-white/5 mx-2" />
+                        <button onClick={flyToReset} title="Reset to SOS" className="w-10 h-10 flex items-center justify-center bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-xl border border-red-500/20 transition-all active:scale-95">
+                            <span className="material-symbols-outlined text-lg">my_location</span>
+                        </button>
+                    </div>
                 </div>
 
                 {/* 🏢 CESIUM CONTAINER */}
-                <div className="flex-1 relative">
+                <div className="flex-1 relative bg-black">
                     <div ref={containerRef} className="w-full h-full" />
 
                     {isLoading && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 bg-zinc-950/90 z-50">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 bg-zinc-950/95 z-50">
                             <div className="relative">
-                                <div className="w-20 h-20 border-4 border-red-500/10 border-t-red-500 rounded-full animate-spin" />
+                                <div className="w-16 h-16 border-2 border-red-500/10 border-t-red-500 rounded-full animate-spin" />
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-red-500 text-3xl animate-pulse">radar</span>
+                                    <span className="material-symbols-outlined text-red-500 text-2xl animate-pulse">satellite_alt</span>
                                 </div>
                             </div>
-                            <div className="flex flex-col items-center gap-2">
-                                <p className="text-zinc-200 font-bold tracking-[0.2em] uppercase text-xs">Initializing Neural Map</p>
-                            </div>
+                            <p className="text-zinc-500 font-bold tracking-[0.3em] uppercase text-[10px]">Streaming Photorealistic 3D</p>
                         </div>
                     )}
                 </div>
@@ -232,23 +251,34 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                 <style dangerouslySetInnerHTML={{
                     __html: `
                     .nav-btn {
-                        width: 48px;
-                        height: 48px;
+                        width: 40px;
+                        height: 40px;
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        background: rgba(0, 0, 0, 0.4);
-                        backdrop-filter: blur(12px);
-                        border: 1px solid rgba(255, 255, 255, 0.1);
-                        border-radius: 16px;
-                        color: rgba(255, 255, 255, 0.7);
-                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                        border-radius: 12px;
+                        color: rgba(255, 255, 255, 0.6);
+                        transition: all 0.2s ease;
                     }
                     .nav-btn:hover {
-                        background: rgba(255, 255, 255, 0.15);
+                        background: rgba(255, 255, 255, 0.1);
                         color: white;
-                        transform: translateY(-2px);
-                        border-color: rgba(255, 255, 255, 0.2);
+                    }
+                    .nav-comp-btn {
+                        width: 18px;
+                        height: 18px;
+                        font-size: 8px;
+                        font-weight: 800;
+                        color: rgba(255, 255, 255, 0.5);
+                        background: rgba(255, 255, 255, 0.05);
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        border-radius: 4px;
+                        transition: all 0.2s;
+                    }
+                    .nav-comp-btn:hover {
+                        background: rgba(59, 130, 246, 0.5);
+                        color: white;
+                        border-color: rgba(59, 130, 246, 0.5);
                     }
                 ` }} />
             </div>
