@@ -6,14 +6,12 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
     const containerRef = useRef(null);
     const viewerRef = useRef(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [viewMode, setViewMode] = useState('human'); // human | orbit
 
     useEffect(() => {
         if (!isOpen || !containerRef.current) return;
 
         let viewer;
 
-        // Initialize Cesium
         if (import.meta.env.VITE_CESIUM_ACCESS_TOKEN) {
             Cesium.Ion.defaultAccessToken = import.meta.env.VITE_CESIUM_ACCESS_TOKEN;
         }
@@ -42,8 +40,6 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                 viewerRef.current = viewer;
 
                 // --- 🎮 ADVANCED CONTROL OPTIMIZATION ---
-
-                // Standardize inputs: Left drag = Orbit, Middle/Right = Pan
                 viewer.scene.screenSpaceCameraController.lookEventTypes = [Cesium.CameraEventType.LEFT_DRAG];
                 viewer.scene.screenSpaceCameraController.rotateEventTypes = [Cesium.CameraEventType.LEFT_DRAG];
                 viewer.scene.screenSpaceCameraController.translateEventTypes = [
@@ -51,29 +47,21 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                     Cesium.CameraEventType.MIDDLE_DRAG
                 ];
 
-                // Constraints
                 viewer.scene.screenSpaceCameraController.maximumZoomDistance = 1500;
                 viewer.scene.screenSpaceCameraController.minimumZoomDistance = 5;
-                viewer.scene.screenSpaceCameraController.inertiaSpin = 0.85;
-                viewer.scene.screenSpaceCameraController.inertiaTranslate = 0.85;
-                viewer.scene.screenSpaceCameraController.inertiaZoom = 0.7;
 
-                // Visual Polish
                 viewer.scene.fog.enabled = true;
                 viewer.scene.fog.density = 0.00015;
                 viewer.scene.globe.enableLighting = true;
                 viewer.scene.highDynamicRange = true;
                 viewer.scene.postProcessStages.fxaa.enabled = true;
 
-                // Add 3D Tiles
                 const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2275207);
                 viewer.scene.primitives.add(tileset);
 
                 setIsLoading(false);
 
                 // --- 📍 MARKERS ---
-                const sosLocation = Cesium.Cartesian3.fromDegrees(lng, lat, 10);
-
                 viewer.entities.add({
                     position: Cesium.Cartesian3.fromDegrees(lng, lat, 15),
                     name: 'EMERGENCY SOS',
@@ -97,7 +85,6 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                     }
                 });
 
-                // Add Responders
                 extraMarkers.forEach(m => {
                     const mLat = m.lat || (m.location?.coordinates ? m.location.coordinates[1] : null);
                     const mLng = m.lng || (m.location?.coordinates ? m.location.coordinates[0] : null);
@@ -126,8 +113,7 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                         pitch: Cesium.Math.toRadians(-20.0),
                         roll: 0.0
                     },
-                    duration: 3,
-                    easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT
+                    duration: 3
                 });
 
             } catch (error) {
@@ -167,6 +153,16 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
         viewerRef.current.camera.zoomOut(viewerRef.current.camera.positionCartographic.height * 0.4);
     };
 
+    const rotateLeft = () => {
+        if (!viewerRef.current) return;
+        viewerRef.current.camera.rotateLeft(Cesium.Math.toRadians(45));
+    };
+
+    const rotateRight = () => {
+        if (!viewerRef.current) return;
+        viewerRef.current.camera.rotateRight(Cesium.Math.toRadians(45));
+    };
+
     const resetNorth = () => {
         if (!viewerRef.current) return;
         viewerRef.current.camera.flyTo({
@@ -202,10 +198,13 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
 
                 {/* 🎮 FLOATING NAVIGATION BAR */}
                 <div className="absolute left-6 bottom-20 z-20 flex flex-col gap-3 pointer-events-auto">
-                    <button onClick={zoomIn} className="nav-btn"><span className="material-symbols-outlined">add</span></button>
-                    <button onClick={zoomOut} className="nav-btn"><span className="material-symbols-outlined">remove</span></button>
+                    <button onClick={zoomIn} className="nav-btn" title="Zoom In"><span className="material-symbols-outlined">add</span></button>
+                    <button onClick={zoomOut} className="nav-btn" title="Zoom Out"><span className="material-symbols-outlined">remove</span></button>
                     <div className="w-8 h-[1px] bg-white/10 mx-auto my-1" />
-                    <button onClick={resetNorth} className="nav-btn"><span className="material-symbols-outlined">explore</span></button>
+                    <button onClick={rotateLeft} className="nav-btn" title="Rotate Left"><span className="material-symbols-outlined">rotate_left</span></button>
+                    <button onClick={rotateRight} className="nav-btn" title="Rotate Right"><span className="material-symbols-outlined">rotate_right</span></button>
+                    <div className="w-8 h-[1px] bg-white/10 mx-auto my-1" />
+                    <button onClick={resetNorth} className="nav-btn" title="Reset North"><span className="material-symbols-outlined">explore</span></button>
                     <button onClick={flyToReset} title="Reset to SOS" className="w-12 h-12 flex items-center justify-center bg-red-500/20 hover:bg-red-500/40 text-red-500 rounded-2xl border border-red-500/30 transition-all backdrop-blur-md">
                         <span className="material-symbols-outlined">my_location</span>
                     </button>
@@ -225,30 +224,11 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                             </div>
                             <div className="flex flex-col items-center gap-2">
                                 <p className="text-zinc-200 font-bold tracking-[0.2em] uppercase text-xs">Initializing Neural Map</p>
-                                <div className="flex gap-1">
-                                    {[0, 1, 2].map(i => <div key={i} className="w-1.5 h-1.5 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />)}
-                                </div>
                             </div>
                         </div>
                     )}
                 </div>
 
-                {/* 📊 DATA OVERLAY FOOTER */}
-                <div className="absolute bottom-6 right-6 left-24 z-20 pointer-events-none flex items-end justify-between">
-                    <div className="bg-black/40 backdrop-blur-md p-4 rounded-2xl border border-white/10 flex gap-8 pointer-events-auto">
-                        <div className="flex flex-col">
-                            <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Global Coordinates</span>
-                            <span className="text-white text-sm font-mono tracking-tighter">{lat.toFixed(6)}°N, {lng.toFixed(6)}°E</span>
-                        </div>
-                        <div className="w-[1px] h-8 bg-white/10" />
-                        <div className="flex flex-col">
-                            <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Active Units</span>
-                            <span className="text-white text-sm font-bold tracking-tight">{extraMarkers.length + 1} Markers Online</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* CSS INJECTED */}
                 <style dangerouslySetInnerHTML={{
                     __html: `
                     .nav-btn {
@@ -269,9 +249,6 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                         color: white;
                         transform: translateY(-2px);
                         border-color: rgba(255, 255, 255, 0.2);
-                    }
-                    .nav-btn:active {
-                        transform: translateY(0);
                     }
                 ` }} />
             </div>
