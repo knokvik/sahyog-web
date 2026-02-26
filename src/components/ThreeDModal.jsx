@@ -10,104 +10,121 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
     useEffect(() => {
         if (!isOpen || !containerRef.current) return;
 
+        let viewer;
+
         // Initialize Cesium
         if (import.meta.env.VITE_CESIUM_ACCESS_TOKEN) {
             Cesium.Ion.defaultAccessToken = import.meta.env.VITE_CESIUM_ACCESS_TOKEN;
         }
 
-        const viewer = new Cesium.Viewer(containerRef.current, {
-            terrainProvider: Cesium.createWorldTerrain ? Cesium.createWorldTerrain() : undefined,
-            animation: false,
-            timeline: false,
-            baseLayerPicker: false,
-            geocoder: false,
-            homeButton: false,
-            infoBox: false,
-            selectionIndicator: false,
-            navigationHelpButton: false,
-            sceneModePicker: false,
-            fullscreenButton: false,
-        });
+        const initCesium = async () => {
+            try {
+                // Determine if we should use legacy or modern terrain
+                const terrainProvider = await Cesium.createWorldTerrainAsync?.() || undefined;
 
-        viewerRef.current = viewer;
+                viewer = new Cesium.Viewer(containerRef.current, {
+                    animation: false,
+                    timeline: false,
+                    baseLayerPicker: false,
+                    geocoder: false,
+                    homeButton: false,
+                    infoBox: false,
+                    selectionIndicator: false,
+                    navigationHelpButton: false,
+                    sceneModePicker: false,
+                    fullscreenButton: false,
+                    terrainProvider: terrainProvider,
+                    skyAtmosphere: new Cesium.SkyAtmosphere(),
+                    shouldAnimate: true
+                });
 
-        // Add 3D Tiles
-        const tileset = viewer.scene.primitives.add(
-            new Cesium.Cesium3DTileset({
-                url: Cesium.IonResource.fromAssetId(2275207),
-            })
-        );
+                viewerRef.current = viewer;
 
-        tileset.readyPromise.then(() => {
-            console.log('3D Tiles Ready');
-            setIsLoading(false);
-        }).catch(err => {
-            console.error('Tileset error:', err);
-            setIsLoading(false);
-        });
+                // Enhanced Realism Settings
+                viewer.scene.globe.enableLighting = true;
+                viewer.scene.highDynamicRange = true;
+                viewer.scene.postProcessStages.fxaa.enabled = true;
 
-        // Add Primary SOS Marker
-        viewer.entities.add({
-            position: Cesium.Cartesian3.fromDegrees(lng, lat, 10),
-            name: 'EMERGENCY SOS',
-            point: {
-                pixelSize: 20,
-                color: Cesium.Color.RED,
-                outlineColor: Cesium.Color.WHITE,
-                outlineWidth: 3,
-                heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND
-            },
-            label: {
-                text: alertInfo?.reporter_name || 'Emergency',
-                font: 'bold 12pt Inter, sans-serif',
-                fillColor: Cesium.Color.WHITE,
-                outlineColor: Cesium.Color.BLACK,
-                outlineWidth: 2,
-                style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-                verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-                pixelOffset: new Cesium.Cartesian2(0, -20),
-                heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND
+                // Add 3D Tiles using modern async static method
+                const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2275207);
+                viewer.scene.primitives.add(tileset);
+
+                console.log('3D Tiles Loaded for Human Perspective');
+                setIsLoading(false);
+
+                // Add Primary SOS Marker (Floating slightly for visibility)
+                viewer.entities.add({
+                    position: Cesium.Cartesian3.fromDegrees(lng, lat, 15),
+                    name: 'EMERGENCY SOS',
+                    point: {
+                        pixelSize: 24,
+                        color: Cesium.Color.RED,
+                        outlineColor: Cesium.Color.WHITE,
+                        outlineWidth: 4,
+                        heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND
+                    },
+                    label: {
+                        text: alertInfo?.reporter_name || 'Emergency',
+                        font: 'bold 14pt Inter, sans-serif',
+                        fillColor: Cesium.Color.WHITE,
+                        outlineColor: Cesium.Color.BLACK,
+                        outlineWidth: 3,
+                        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                        pixelOffset: new Cesium.Cartesian2(0, -30),
+                        heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+                        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0.0, 1000.0)
+                    }
+                });
+
+                // Add Extra Markers
+                extraMarkers.forEach(m => {
+                    const mLat = m.lat || (m.location?.coordinates ? m.location.coordinates[1] : null);
+                    const mLng = m.lng || (m.location?.coordinates ? m.location.coordinates[0] : null);
+
+                    if (!mLat || !mLng || (Math.abs(mLat - lat) < 0.0001 && Math.abs(mLng - lng) < 0.0001)) return;
+
+                    const color = m.role === 'coordinator' ? Cesium.Color.LIME :
+                        m.role === 'volunteer' ? Cesium.Color.DODGERBLUE :
+                            Cesium.Color.YELLOW;
+
+                    viewer.entities.add({
+                        position: Cesium.Cartesian3.fromDegrees(mLng, mLat, 8),
+                        name: m.full_name || m.reporter_name || 'Responder',
+                        point: {
+                            pixelSize: 14,
+                            color: color,
+                            outlineColor: Cesium.Color.WHITE,
+                            outlineWidth: 2,
+                            heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND
+                        }
+                    });
+                });
+
+                // Camera Fly To: Human-Level Perspective
+                // Altitude: ~40m, Pitch: -15deg (Natural horizon view)
+                viewer.camera.flyTo({
+                    destination: Cesium.Cartesian3.fromDegrees(lng, lat, 40),
+                    orientation: {
+                        heading: Cesium.Math.toRadians(0),
+                        pitch: Cesium.Math.toRadians(-15.0),
+                        roll: 0.0
+                    },
+                    duration: 5,
+                    easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT
+                });
+
+            } catch (error) {
+                console.error('Cesium Initialization Error:', error);
+                setIsLoading(false);
             }
-        });
+        };
 
-        // Add Extra Markers (Responders, etc)
-        extraMarkers.forEach(m => {
-            const mLat = m.lat || (m.location?.coordinates ? m.location.coordinates[1] : null);
-            const mLng = m.lng || (m.location?.coordinates ? m.location.coordinates[0] : null);
-
-            if (!mLat || !mLng || (Math.abs(mLat - lat) < 0.0001 && Math.abs(mLng - lng) < 0.0001)) return;
-
-            const color = m.role === 'coordinator' ? Cesium.Color.LIME :
-                m.role === 'volunteer' ? Cesium.Color.DODGERBLUE :
-                    Cesium.Color.YELLOW;
-
-            viewer.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(mLng, mLat, 5),
-                name: m.full_name || m.reporter_name || 'Responder',
-                point: {
-                    pixelSize: 12,
-                    color: color,
-                    outlineColor: Cesium.Color.WHITE,
-                    outlineWidth: 2,
-                    heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND
-                }
-            });
-        });
-
-        // Camera Fly To
-        viewer.camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(lng, lat, 150),
-            orientation: {
-                heading: Cesium.Math.toRadians(0),
-                pitch: Cesium.Math.toRadians(-45),
-                roll: 0
-            },
-            duration: 4
-        });
+        initCesium();
 
         return () => {
-            if (viewerRef.current && !viewerRef.current.isDestroyed()) {
-                viewerRef.current.destroy();
+            if (viewer && !viewer.isDestroyed()) {
+                viewer.destroy();
                 viewerRef.current = null;
             }
         };
@@ -118,12 +135,11 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 md:p-10">
             <div className="relative w-full h-full max-w-6xl bg-zinc-900 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
-                {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-white/10 bg-zinc-900">
                     <div>
                         <h3 className="text-xl font-bold text-white flex items-center gap-2">
                             <span className="material-symbols-outlined text-red-500">3d_rotation</span>
-                            3D Emergency View
+                            3D Immersive View
                         </h3>
                         <p className="text-sm text-zinc-400">
                             {alertInfo?.reporter_name || 'Anonymous'} • {alertInfo?.type || 'Emergency'}
@@ -137,25 +153,23 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                     </button>
                 </div>
 
-                {/* Cesium Viewer Container */}
                 <div className="flex-1 relative bg-black">
                     <div ref={containerRef} className="w-full h-full" />
 
                     {isLoading && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-zinc-950/50 backdrop-blur-sm transition-opacity duration-500">
                             <div className="w-12 h-12 border-4 border-red-500/20 border-t-red-500 rounded-full animate-spin"></div>
-                            <p className="text-sm font-medium text-zinc-400 animate-pulse">Initializing 3D Engine...</p>
+                            <p className="text-sm font-medium text-zinc-400 animate-pulse">Entering 3D Environment...</p>
                         </div>
                     )}
                 </div>
 
-                {/* Footer */}
                 <div className="p-4 bg-zinc-900 border-t border-white/10 flex justify-between items-center text-[10px] uppercase tracking-widest text-zinc-500">
                     <div className="flex gap-4">
                         <span>LAT: {lat.toFixed(6)}</span>
                         <span>LNG: {lng.toFixed(6)}</span>
                     </div>
-                    <span>Direct CesiumJS Engine (Fast Mode)</span>
+                    <span>Human-Perspective Engine (Enabled)</span>
                 </div>
             </div>
         </div>
