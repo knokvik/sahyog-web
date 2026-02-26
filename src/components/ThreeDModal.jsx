@@ -2,14 +2,18 @@ import React, { useEffect, useRef } from 'react';
 import { Viewer, Cesium3DTileset, CameraFlyTo, Entity, PointGraphics } from 'resium';
 import * as Cesium from 'cesium';
 
+if (typeof window !== 'undefined') {
+    window.Cesium = Cesium;
+}
+
 const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }) => {
     const viewerRef = useRef(null);
 
     useEffect(() => {
-        if (import.meta.env.VITE_CESIUM_ACCESS_TOKEN) {
+        if (isOpen && import.meta.env.VITE_CESIUM_ACCESS_TOKEN) {
             Cesium.Ion.defaultAccessToken = import.meta.env.VITE_CESIUM_ACCESS_TOKEN;
         }
-    }, []);
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -40,7 +44,7 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                 {/* Cesium Viewer */}
                 <div className="flex-1 relative">
                     <Viewer
-                        full
+                        style={{ height: '100%', width: '100%' }}
                         ref={viewerRef}
                         animation={false}
                         timeline={false}

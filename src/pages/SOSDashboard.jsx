@@ -62,20 +62,20 @@ const SOSDashboard = () => {
             })
             .catch(err => console.error('Failed to fetch initial SOS alerts:', err));
 
-        // Fetch volunteers
+        // Fetch responders (volunteers & coordinators)
         apiRequest(apiPaths.users, {}, getToken)
             .then(data => {
                 if (Array.isArray(data)) {
-                    const liveVols = {};
+                    const liveResponders = {};
                     data.forEach(user => {
-                        if (user.role === 'volunteer' && user.lat && user.lng) {
-                            liveVols[user.id] = user;
+                        if ((user.role === 'volunteer' || user.role === 'coordinator') && user.lat && user.lng) {
+                            liveResponders[user.id] = user;
                         }
                     });
-                    setVolunteers(liveVols);
+                    setVolunteers(liveResponders);
                 }
             })
-            .catch(err => console.error('Failed to fetch volunteers:', err));
+            .catch(err => console.error('Failed to fetch responders:', err));
 
         // Socket logic
         const socket = io(window.location.origin, {
@@ -96,7 +96,7 @@ const SOSDashboard = () => {
         });
 
         socket.on('volunteer_location_update', (data) => {
-            if (data.role === 'volunteer') {
+            if (data.role === 'volunteer' || data.role === 'coordinator') {
                 setVolunteers(prev => ({ ...prev, [data.id]: data }));
             }
         });

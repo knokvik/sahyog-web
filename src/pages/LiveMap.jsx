@@ -105,20 +105,20 @@ export function LiveMap() {
             })
             .catch(err => console.error('Failed to fetch initial SOS alerts:', err));
 
-        // Initial fetch of volunteers
+        // Initial fetch of responders (volunteers & coordinators)
         apiRequest(apiPaths.users, {}, getToken)
             .then(data => {
                 if (Array.isArray(data)) {
-                    const liveVols = {};
+                    const liveResponders = {};
                     data.forEach(user => {
-                        if (user.role === 'volunteer' && user.lat && user.lng) {
-                            liveVols[user.id] = user;
+                        if ((user.role === 'volunteer' || user.role === 'coordinator') && user.lat && user.lng) {
+                            liveResponders[user.id] = user;
                         }
                     });
-                    setVolunteers(liveVols);
+                    setVolunteers(liveResponders);
                 }
             })
-            .catch(err => console.error('Failed to fetch volunteers:', err));
+            .catch(err => console.error('Failed to fetch responders:', err));
 
         // Socket.io connection
         const socket = io(window.location.origin, {
@@ -145,8 +145,8 @@ export function LiveMap() {
         });
 
         socket.on('volunteer_location_update', (data) => {
-            console.log('Volunteer moved:', data);
-            if (data.role === 'volunteer') {
+            console.log('Responder moved:', data);
+            if (data.role === 'volunteer' || data.role === 'coordinator') {
                 setVolunteers(prev => ({
                     ...prev,
                     [data.id]: data
@@ -222,14 +222,14 @@ export function LiveMap() {
                     );
                 })}
 
-                {/* Live Volunteers */}
+                {/* Live Responders */}
                 {volList.map(vol => (
                     <Marker key={vol.id} position={[vol.lat, vol.lng]} icon={volunteerIcon}>
                         <Popup>
                             <div style={{ minWidth: '120px' }}>
-                                <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', color: '#3b82f6' }}>{vol.full_name}</h4>
-                                <p style={{ margin: '2px 0', fontSize: '11px', color: '#64748b' }}>Volunteer (Reserving)</p>
-                                <span style={{ fontSize: '10px', color: '#94a3b8' }}>Last Active: {new Date(vol.last_active).toLocaleTimeString()}</span>
+                                <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', color: vol.role === 'coordinator' ? '#10b981' : '#3b82f6' }}>{vol.full_name}</h4>
+                                <p style={{ margin: '2px 0', fontSize: '11px', color: '#64748b' }}>{vol.role.charAt(0).toUpperCase() + vol.role.slice(1)}</p>
+                                <span style={{ fontSize: '10px', color: '#94a3b8' }}>Last Active: {new Date(vol.last_active || Date.now()).toLocaleTimeString()}</span>
                             </div>
                         </Popup>
                     </Marker>
