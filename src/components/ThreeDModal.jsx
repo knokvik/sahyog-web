@@ -6,9 +6,12 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
     const containerRef = useRef(null);
     const viewerRef = useRef(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [viewMode, setViewMode] = useState('aerial'); // 'aerial' | 'street'
+
+    const googleApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
     useEffect(() => {
-        if (!isOpen || !containerRef.current) return;
+        if (!isOpen || !containerRef.current || viewMode !== 'aerial') return;
 
         let viewer;
 
@@ -39,7 +42,7 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
 
                 viewerRef.current = viewer;
 
-                // --- 🏢 LOCALIZED CONSTRAINTS & REALISM ---
+                // --- 🎮 ADVANCED CONTROL OPTIMIZATION ---
                 viewer.scene.screenSpaceCameraController.maximumZoomDistance = 1500;
                 viewer.scene.screenSpaceCameraController.minimumZoomDistance = 5;
 
@@ -50,7 +53,6 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                 viewer.scene.postProcessStages.fxaa.enabled = true;
 
                 // --- 🧱 GOOGLE PHOTOREALISTIC 3D TILES ---
-                // Asset ID 2275207 is the standard ID for Google's official Photorealistic 3D Tiles on Cesium Ion
                 const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2275207);
                 viewer.scene.primitives.add(tileset);
 
@@ -69,7 +71,7 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                     },
                     label: {
                         text: alertInfo?.reporter_name || 'Emergency',
-                        font: 'bold 14pt Inter, sans-serif',
+                        font: 'bold 12pt Inter, sans-serif',
                         fillColor: Cesium.Color.WHITE,
                         outlineColor: Cesium.Color.BLACK,
                         outlineWidth: 3,
@@ -80,44 +82,31 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                     }
                 });
 
-                extraMarkers.forEach(m => {
-                    const mLat = m.lat || (m.location?.coordinates ? m.location.coordinates[1] : null);
-                    const mLng = m.lng || (m.location?.coordinates ? m.location.coordinates[0] : null);
-                    if (!mLat || !mLng || (Math.abs(mLat - lat) < 0.0001 && Math.abs(mLng - lng) < 0.0001)) return;
-
-                    const color = m.role === 'coordinator' ? Cesium.Color.LIME :
-                        m.role === 'volunteer' ? Cesium.Color.DODGERBLUE : Cesium.Color.YELLOW;
-
-                    viewer.entities.add({
-                        position: Cesium.Cartesian3.fromDegrees(mLng, mLat, 8),
-                        name: m.full_name || m.reporter_name || 'Responder',
-                        point: { pixelSize: 14, color: color, outlineColor: Cesium.Color.WHITE, outlineWidth: 2, heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND }
-                    });
-                });
-
-                // --- 🎥 CAMERA INITIALIZATION ---
+                // --- 🎥 INITIAL ANIMATION ---
                 viewer.camera.setView({
                     destination: Cesium.Cartesian3.fromDegrees(lng, lat, 600),
                     orientation: { heading: 0, pitch: Cesium.Math.toRadians(-90), roll: 0 }
                 });
 
                 viewer.camera.flyTo({
-                    destination: Cesium.Cartesian3.fromDegrees(lng, lat, 100),
+                    destination: Cesium.Cartesian3.fromDegrees(lng, lat, 120),
                     orientation: {
                         heading: Cesium.Math.toRadians(0),
-                        pitch: Cesium.Math.toRadians(-25.0),
+                        pitch: Cesium.Math.toRadians(-30.0),
                         roll: 0.0
                     },
                     duration: 3
                 });
 
             } catch (error) {
-                console.error('Cesium Google Integration Error:', error);
+                console.error('Cesium Integration Error:', error);
                 setIsLoading(false);
             }
         };
 
-        initCesium();
+        if (viewMode === 'aerial') {
+            initCesium();
+        }
 
         return () => {
             if (viewer && !viewer.isDestroyed()) {
@@ -125,15 +114,15 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                 viewerRef.current = null;
             }
         };
-    }, [isOpen, lat, lng]);
+    }, [isOpen, lat, lng, viewMode]);
 
     // --- 🕹️ NAVIGATION HELPERS ---
 
     const flyToReset = () => {
         if (!viewerRef.current) return;
         viewerRef.current.camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(lng, lat, 100),
-            orientation: { heading: 0, pitch: Cesium.Math.toRadians(-25), roll: 0 },
+            destination: Cesium.Cartesian3.fromDegrees(lng, lat, 120),
+            orientation: { heading: 0, pitch: Cesium.Math.toRadians(-30), roll: 0 },
             duration: 1.5
         });
     };
@@ -146,21 +135,6 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
     const zoomOut = () => {
         if (!viewerRef.current) return;
         viewerRef.current.camera.zoomOut(viewerRef.current.camera.positionCartographic.height * 0.4);
-    };
-
-    const rotateLeft = () => {
-        if (!viewerRef.current) return;
-        viewerRef.current.camera.rotateLeft(Cesium.Math.toRadians(45));
-    };
-
-    const rotateRight = () => {
-        if (!viewerRef.current) return;
-        viewerRef.current.camera.rotateRight(Cesium.Math.toRadians(45));
-    };
-
-    const openStreetView = () => {
-        const url = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
-        window.open(url, '_blank');
     };
 
     const setHeading = (degrees) => {
@@ -176,76 +150,126 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-md p-2 md:p-6 lg:p-8">
-            <div className="relative w-full h-full max-w-[1400px] bg-zinc-950 rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col border border-white/5">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-md p-2 md:p-6 lg:p-8 font-sans">
+            <div className="relative w-full h-full max-w-[1400px] bg-zinc-950 rounded-3xl overflow-hidden shadow-[0_0_80px_rgba(0,0,0,0.8)] flex flex-col border border-white/5">
 
                 {/* 🏷️ PREMIMUM HEADER */}
-                <div className="absolute top-0 inset-x-0 z-20 flex items-center justify-between p-6 pointer-events-none">
+                <div className="absolute top-0 inset-x-0 z-30 flex items-center justify-between p-6 pointer-events-none">
                     <div className="flex flex-col gap-1 pointer-events-auto">
-                        <div className="flex items-center gap-3 bg-black/60 backdrop-blur-xl p-2 px-4 rounded-xl border border-white/10 shadow-xl">
+                        <div className="flex items-center gap-3 bg-black/70 backdrop-blur-2xl p-2 px-4 rounded-2xl border border-white/10 shadow-2xl">
                             <span className="material-symbols-outlined text-red-500 animate-pulse">emergency</span>
-                            <span className="text-white font-black tracking-widest text-xs">VIRTUAL COMMAND</span>
-                            <div className="w-[1px] h-4 bg-white/20 mx-1" />
-                            <span className="text-zinc-300 text-xs font-medium uppercase tracking-wider">{alertInfo?.reporter_name || 'ACTIVE SOS'}</span>
+                            <span className="text-white font-black tracking-widest text-[10px]">VIRTUAL COMMAND</span>
+                            <div className="w-[1px] h-4 bg-white/10 mx-1" />
+                            <span className="text-zinc-400 text-[10px] font-bold uppercase truncate max-w-[150px]">{alertInfo?.reporter_name || 'ACTIVE SOS'}</span>
                         </div>
                     </div>
-                    <div className="flex gap-3 pointer-events-auto">
+
+                    {/* View Mode Switcher */}
+                    <div className="flex bg-black/70 backdrop-blur-2xl p-1 rounded-2xl border border-white/10 shadow-2xl pointer-events-auto">
                         <button
-                            onClick={openStreetView}
-                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold px-4 rounded-xl border border-white/20 transition-all shadow-lg active:scale-95 group"
+                            onClick={() => setViewMode('aerial')}
+                            className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-[10px] font-black transition-all ${viewMode === 'aerial' ? 'bg-red-500 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
                         >
-                            <span className="material-symbols-outlined text-sm group-hover:animate-bounce">streetview</span>
-                            OFFICIAL STREET VIEW
+                            <span className="material-symbols-outlined text-sm">satellite_alt</span>
+                            AERIAL 3D
                         </button>
                         <button
-                            onClick={onClose}
-                            className="w-10 h-10 flex items-center justify-center bg-black/60 backdrop-blur-xl hover:bg-red-500/80 rounded-xl border border-white/10 transition-all group shadow-lg"
+                            onClick={() => setViewMode('street')}
+                            className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-[10px] font-black transition-all ${viewMode === 'street' ? 'bg-blue-600 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
                         >
-                            <span className="material-symbols-outlined text-white/70 group-hover:text-white group-hover:rotate-90 transition-all text-sm">close</span>
+                            <span className="material-symbols-outlined text-sm">streetview</span>
+                            STREET LEVEL
                         </button>
                     </div>
+
+                    <button
+                        onClick={onClose}
+                        className="pointer-events-auto w-10 h-10 flex items-center justify-center bg-black/70 backdrop-blur-2xl hover:bg-red-500 transition-colors rounded-xl border border-white/10"
+                    >
+                        <span className="material-symbols-outlined text-white text-sm">close</span>
+                    </button>
                 </div>
 
-                {/* 🎮 FLOATING NAVIGATION BAR */}
-                <div className="absolute left-6 bottom-10 z-20 flex flex-col gap-3 pointer-events-auto">
-                    <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-1.5 border border-white/10 shadow-2xl flex flex-col gap-2">
-                        <button onClick={zoomIn} className="nav-btn" title="Zoom In"><span className="material-symbols-outlined text-lg">add</span></button>
-                        <button onClick={zoomOut} className="nav-btn" title="Zoom Out"><span className="material-symbols-outlined text-lg">remove</span></button>
-                        <div className="h-[1px] bg-white/5 mx-2" />
-                        <button onClick={rotateLeft} className="nav-btn" title="Rotate Left"><span className="material-symbols-outlined text-lg">rotate_left</span></button>
-                        <button onClick={rotateRight} className="nav-btn" title="Rotate Right"><span className="material-symbols-outlined text-lg">rotate_right</span></button>
-                        <div className="h-[1px] bg-white/5 mx-2" />
-                        <div className="flex flex-col items-center gap-1.5 py-2">
-                            <span className="text-[9px] text-zinc-500 font-bold tracking-[0.2em] uppercase">Dir</span>
-                            <div className="grid grid-cols-2 gap-1 px-1">
-                                <button onClick={() => setHeading(0)} className="nav-comp-btn">N</button>
-                                <button onClick={() => setHeading(90)} className="nav-comp-btn">E</button>
-                                <button onClick={() => setHeading(180)} className="nav-comp-btn">S</button>
-                                <button onClick={() => setHeading(270)} className="nav-comp-btn">W</button>
+                {/* 🕹️ AERIAL CONTROLS (Only visible in aerial mode) */}
+                {viewMode === 'aerial' && (
+                    <div className="absolute left-6 bottom-10 z-30 flex flex-col gap-3 pointer-events-auto">
+                        <div className="bg-black/70 backdrop-blur-2xl rounded-2xl p-1.5 border border-white/10 shadow-2xl flex flex-col gap-1.5">
+                            <button onClick={zoomIn} className="nav-btn"><span className="material-symbols-outlined">add</span></button>
+                            <button onClick={zoomOut} className="nav-btn"><span className="material-symbols-outlined">remove</span></button>
+                            <div className="h-[1px] bg-white/5 mx-2" />
+                            <div className="grid grid-cols-2 gap-1 p-1">
+                                <button onClick={() => setHeading(0)} className="nav-dir-btn">N</button>
+                                <button onClick={() => setHeading(90)} className="nav-dir-btn">E</button>
+                                <button onClick={() => setHeading(180)} className="nav-dir-btn">S</button>
+                                <button onClick={() => setHeading(270)} className="nav-dir-btn">W</button>
                             </div>
+                            <div className="h-[1px] bg-white/5 mx-2" />
+                            <button onClick={flyToReset} className="w-10 h-10 flex items-center justify-center bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-xl transition-all active:scale-90">
+                                <span className="material-symbols-outlined">radar</span>
+                            </button>
                         </div>
-                        <div className="h-[1px] bg-white/5 mx-2" />
-                        <button onClick={flyToReset} title="Reset to SOS" className="w-10 h-10 flex items-center justify-center bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-xl border border-red-500/20 transition-all active:scale-95">
-                            <span className="material-symbols-outlined text-lg">my_location</span>
-                        </button>
                     </div>
-                </div>
+                )}
 
-                {/* 🏢 CESIUM CONTAINER */}
+                {/* 🏢 MAIN VIEWER AREA */}
                 <div className="flex-1 relative bg-black">
-                    <div ref={containerRef} className="w-full h-full" />
-
-                    {isLoading && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 bg-zinc-950/95 z-50">
-                            <div className="relative">
-                                <div className="w-16 h-16 border-2 border-red-500/10 border-t-red-500 rounded-full animate-spin" />
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-red-500 text-2xl animate-pulse">satellite_alt</span>
+                    {viewMode === 'aerial' ? (
+                        <>
+                            <div ref={containerRef} className="w-full h-full" />
+                            {isLoading && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 bg-zinc-950/95 z-50">
+                                    <div className="w-12 h-12 border-2 border-red-500/20 border-t-red-500 rounded-full animate-spin" />
+                                    <p className="text-zinc-500 font-black tracking-[0.4em] text-[10px] uppercase">Mapping Terrain</p>
                                 </div>
-                            </div>
-                            <p className="text-zinc-500 font-bold tracking-[0.3em] uppercase text-[10px]">Streaming Photorealistic 3D</p>
+                            )}
+                        </>
+                    ) : (
+                        <div className="w-full h-full bg-zinc-950 flex flex-col">
+                            {googleApiKey ? (
+                                <iframe
+                                    title="Street View"
+                                    width="100%"
+                                    height="100%"
+                                    style={{ border: 0 }}
+                                    src={`https://www.google.com/maps/embed/v1/streetview?key=${googleApiKey}&location=${lat},${lng}&heading=0&pitch=0&fov=90`}
+                                    allowFullScreen
+                                />
+                            ) : (
+                                <div className="flex-1 flex flex-col items-center justify-center p-12 text-center gap-6">
+                                    <div className="w-20 h-20 bg-zinc-900 rounded-3xl flex items-center justify-center border border-white/5">
+                                        <span className="material-symbols-outlined text-zinc-700 text-4xl">no_photography</span>
+                                    </div>
+                                    <div className="flex flex-col gap-2 max-w-sm">
+                                        <h4 className="text-white font-black tracking-wide text-lg">STREET VIEW RESTRICTED</h4>
+                                        <p className="text-zinc-500 text-xs leading-relaxed">
+                                            The official Google integration requires a valid API key. Please check your system configuration or contact your administrator.
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank')}
+                                        className="mt-4 px-6 py-2.5 bg-zinc-100 hover:bg-white text-black font-black text-[10px] rounded-xl transition-all"
+                                    >
+                                        OPEN STREET VIEW NATIVE
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )}
+                </div>
+
+                {/* 📊 FOOTER HUD */}
+                <div className="absolute bottom-6 right-6 z-30 pointer-events-none">
+                    <div className="bg-black/70 backdrop-blur-2xl p-3 px-5 rounded-2xl border border-white/10 flex gap-6 shadow-2xl pointer-events-auto">
+                        <div className="flex flex-col">
+                            <span className="text-[9px] text-zinc-500 uppercase font-black tracking-[0.2em]">Live Feed</span>
+                            <span className="text-white text-xs font-bold tracking-tight">{viewMode === 'aerial' ? 'Streaming Photorealistic 3D' : 'Official Street Panorama'}</span>
+                        </div>
+                        <div className="w-[1px] h-6 bg-white/5" />
+                        <div className="flex flex-col">
+                            <span className="text-[9px] text-zinc-500 uppercase font-black tracking-[0.2em]">Coordinates</span>
+                            <span className="text-white text-xs font-mono tracking-tighter">{lat.toFixed(6)}°N, {lng.toFixed(6)}°E</span>
+                        </div>
+                    </div>
                 </div>
 
                 <style dangerouslySetInnerHTML={{
@@ -257,28 +281,28 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                         align-items: center;
                         justify-content: center;
                         border-radius: 12px;
-                        color: rgba(255, 255, 255, 0.6);
-                        transition: all 0.2s ease;
-                    }
-                    .nav-btn:hover {
-                        background: rgba(255, 255, 255, 0.1);
-                        color: white;
-                    }
-                    .nav-comp-btn {
-                        width: 18px;
-                        height: 18px;
-                        font-size: 8px;
-                        font-weight: 800;
                         color: rgba(255, 255, 255, 0.5);
-                        background: rgba(255, 255, 255, 0.05);
-                        border: 1px solid rgba(255, 255, 255, 0.1);
-                        border-radius: 4px;
                         transition: all 0.2s;
                     }
-                    .nav-comp-btn:hover {
-                        background: rgba(59, 130, 246, 0.5);
+                    .nav-btn:hover {
+                        background: rgba(255, 255, 255, 0.08);
                         color: white;
-                        border-color: rgba(59, 130, 246, 0.5);
+                    }
+                    .nav-dir-btn {
+                        width: 20px;
+                        height: 20px;
+                        font-size: 8px;
+                        font-weight: 900;
+                        color: rgba(255, 255, 255, 0.4);
+                        background: rgba(255, 255, 255, 0.03);
+                        border: 1px solid rgba(255, 255, 255, 0.08);
+                        border-radius: 6px;
+                        transition: all 0.2s;
+                    }
+                    .nav-dir-btn:hover {
+                        background: rgba(255, 255, 255, 0.1);
+                        color: white;
+                        border-color: rgba(255, 255, 255, 0.2);
                     }
                 ` }} />
             </div>
