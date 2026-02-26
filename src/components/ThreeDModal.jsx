@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Viewer, Cesium3DTileset, CameraFlyTo, Entity, PointGraphics } from 'resium';
 import * as Cesium from 'cesium';
 
-const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo }) => {
+const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }) => {
     const viewerRef = useRef(null);
 
     useEffect(() => {
@@ -12,10 +12,6 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo }) => {
     }, []);
 
     if (!isOpen) return null;
-
-    // Google Photorealistic 3D Tiles Asset ID
-    // 2275207 is the default asset ID for Google Photorealistic 3D Tiles in Cesium Ion
-    const googleAssetId = 2275207;
 
     const destination = Cesium.Cartesian3.fromDegrees(lng, lat, 150); // Fly to 150m height
 
@@ -46,7 +42,6 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo }) => {
                     <Viewer
                         full
                         ref={viewerRef}
-                        terrainProvider={Cesium.createWorldTerrain()}
                         animation={false}
                         timeline={false}
                         baseLayerPicker={false}
@@ -58,7 +53,6 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo }) => {
                         sceneModePicker={false}
                     >
                         {/* Google Photorealistic 3D Tileset */}
-                        {/* Note: This requires a Cesium Ion token or Google API Key */}
                         <Cesium3DTileset url={Cesium.IonResource.fromAssetId(2275207)} />
 
                         <CameraFlyTo
@@ -71,12 +65,28 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo }) => {
                             }}
                         />
 
+                        {/* Primary SOS Marker */}
                         <Entity
-                            position={Cesium.Cartesian3.fromDegrees(lng, lat, 0)}
-                            name="SOS Location"
+                            position={Cesium.Cartesian3.fromDegrees(lng, lat, 2)}
+                            name="EMERGENCY SOS"
                         >
-                            <PointGraphics pixelSize={20} color={Cesium.Color.RED} outlineColor={Cesium.Color.WHITE} outlineWidth={2} />
+                            <PointGraphics pixelSize={25} color={Cesium.Color.RED} outlineColor={Cesium.Color.WHITE} outlineWidth={3} />
                         </Entity>
+
+                        {/* Extra markers (Volunteers, Coordinators, other SOS) */}
+                        {extraMarkers.map((m, idx) => {
+                            if (!m.lat || !m.lng || (m.lat === lat && m.lng === lng)) return null;
+                            const color = m.role === 'volunteer' ? Cesium.Color.DODGERBLUE : Cesium.Color.LIME;
+                            return (
+                                <Entity
+                                    key={`extra-${idx}`}
+                                    position={Cesium.Cartesian3.fromDegrees(m.lng, m.lat, 2)}
+                                    name={m.name || m.full_name || 'Responder'}
+                                >
+                                    <PointGraphics pixelSize={15} color={color} outlineColor={Cesium.Color.WHITE} outlineWidth={2} />
+                                </Entity>
+                            );
+                        })}
                     </Viewer>
                 </div>
 
