@@ -35,12 +35,24 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                     fullscreenButton: false,
                     terrainProvider: terrainProvider,
                     skyAtmosphere: new Cesium.SkyAtmosphere(),
-                    shouldAnimate: true
+                    shouldAnimate: true,
+                    // Prevent the "global globe" view by limiting maximum zoom distance
+                    scene3DOnly: true,
                 });
 
                 viewerRef.current = viewer;
 
-                // Enhanced Realism Settings
+                // --- 🏢 LOCALIZED CONSTRAINTS & REALISM ---
+
+                // Set camera height constraints to prevent zooming out to global earth view
+                viewer.scene.screenSpaceCameraController.maximumZoomDistance = 1200; // Limit zoom out to local city scale
+                viewer.scene.screenSpaceCameraController.minimumZoomDistance = 10;   // Allow close-up street view
+
+                // Enable atmospheric effects for urban realism
+                viewer.scene.fog.enabled = true;
+                viewer.scene.fog.density = 0.0001;
+                viewer.scene.fog.screenSpaceErrorFactor = 2.0;
+
                 viewer.scene.globe.enableLighting = true;
                 viewer.scene.highDynamicRange = true;
                 viewer.scene.postProcessStages.fxaa.enabled = true;
@@ -49,10 +61,11 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                 const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2275207);
                 viewer.scene.primitives.add(tileset);
 
-                console.log('3D Tiles Loaded for Human Perspective');
                 setIsLoading(false);
 
-                // Add Primary SOS Marker (Floating slightly for visibility)
+                // --- 📍 MARKERS ---
+
+                // Add Primary SOS Marker
                 viewer.entities.add({
                     position: Cesium.Cartesian3.fromDegrees(lng, lat, 15),
                     name: 'EMERGENCY SOS',
@@ -77,7 +90,7 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                     }
                 });
 
-                // Add Extra Markers
+                // Add Extra Markers (Responders, etc)
                 extraMarkers.forEach(m => {
                     const mLat = m.lat || (m.location?.coordinates ? m.location.coordinates[1] : null);
                     const mLng = m.lng || (m.location?.coordinates ? m.location.coordinates[0] : null);
@@ -101,16 +114,27 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                     });
                 });
 
-                // Camera Fly To: Human-Level Perspective
-                // Altitude: ~40m, Pitch: -15deg (Natural horizon view)
-                viewer.camera.flyTo({
-                    destination: Cesium.Cartesian3.fromDegrees(lng, lat, 40),
+                // --- 🎥 CAMERA INITIALIZATION ---
+
+                // Set initial camera view to avoid showing the whole globe during initialization
+                viewer.camera.setView({
+                    destination: Cesium.Cartesian3.fromDegrees(lng, lat, 800),
                     orientation: {
                         heading: Cesium.Math.toRadians(0),
-                        pitch: Cesium.Math.toRadians(-15.0),
+                        pitch: Cesium.Math.toRadians(-90),
+                        roll: 0.0
+                    }
+                });
+
+                // Fast cinematic transition to human-level perspective
+                viewer.camera.flyTo({
+                    destination: Cesium.Cartesian3.fromDegrees(lng, lat, 45),
+                    orientation: {
+                        heading: Cesium.Math.toRadians(0),
+                        pitch: Cesium.Math.toRadians(-12.0),
                         roll: 0.0
                     },
-                    duration: 5,
+                    duration: 2.5,
                     easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT
                 });
 
@@ -159,7 +183,7 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                     {isLoading && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-zinc-950/50 backdrop-blur-sm transition-opacity duration-500">
                             <div className="w-12 h-12 border-4 border-red-500/20 border-t-red-500 rounded-full animate-spin"></div>
-                            <p className="text-sm font-medium text-zinc-400 animate-pulse">Entering 3D Environment...</p>
+                            <p className="text-sm font-medium text-zinc-400 animate-pulse">Establishing Immersive View...</p>
                         </div>
                     )}
                 </div>
@@ -169,7 +193,7 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                         <span>LAT: {lat.toFixed(6)}</span>
                         <span>LNG: {lng.toFixed(6)}</span>
                     </div>
-                    <span>Human-Perspective Engine (Enabled)</span>
+                    <span>Localized Urban Context Focus</span>
                 </div>
             </div>
         </div>
