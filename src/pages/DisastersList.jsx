@@ -163,12 +163,21 @@ function ExpandableDetailsRow({ disaster, onCancel }) {
   const { data: tasks, isLoading } = useDisasterTasks(disaster.id);
   const resolveDisaster = useResolveDisaster();
   const [showConfirm, setShowConfirm] = useState(false);
+  const [resolveError, setResolveError] = useState(null);
+
+  // Count active tasks and SOS from the tasks data
+  const activeTasks = tasks?.filter(t => ['pending', 'accepted', 'in_progress'].includes(t.status))?.length || 0;
+  const hasActiveItems = activeTasks > 0 || (disaster.active_sos > 0);
 
   const handleResolveConfirm = (id) => {
+    setResolveError(null);
     resolveDisaster.mutate(id, {
       onSuccess: () => {
         setShowConfirm(false);
         onCancel();
+      },
+      onError: (error) => {
+        setResolveError(error.message);
       }
     });
   };
@@ -224,13 +233,50 @@ function ExpandableDetailsRow({ disaster, onCancel }) {
             )}
           </div>
 
+          {/* Active Items Warning */}
+          {hasActiveItems && (
+            <div style={{ 
+              margin: '16px 0', 
+              padding: '12px 16px', 
+              background: 'var(--badge-amber-bg)', 
+              borderRadius: 8,
+              border: '1px solid var(--color-warning)',
+              color: 'var(--badge-amber-fg)',
+              fontSize: 13
+            }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: 'middle', marginRight: 8 }}>warning</span>
+              <strong>Cannot resolve:</strong> {activeTasks} active task(s), {disaster.active_sos || 0} active SOS alert(s)
+            </div>
+          )}
+
+          {/* Resolution Error */}
+          {resolveError && (
+            <div style={{ 
+              margin: '16px 0', 
+              padding: '12px 16px', 
+              background: 'var(--badge-red-bg)', 
+              borderRadius: 8,
+              border: '1px solid var(--color-danger)',
+              color: 'var(--badge-red-fg)',
+              fontSize: 13
+            }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: 'middle', marginRight: 8 }}>error</span>
+              {resolveError}
+            </div>
+          )}
+
           <div className={styles.modalActions} style={{ marginTop: 20 }}>
             <button type="button" className={styles.cancelBtn} onClick={onCancel}>Close Panel</button>
             <button 
               type="button" 
               className={styles.submitBtn} 
-              style={{ background: 'var(--color-danger)' }}
-              onClick={() => setShowConfirm(true)}
+              style={{ 
+                background: hasActiveItems ? 'var(--color-text-muted)' : 'var(--color-danger)',
+                cursor: hasActiveItems ? 'not-allowed' : 'pointer'
+              }}
+              onClick={() => !hasActiveItems && setShowConfirm(true)}
+              disabled={hasActiveItems}
+              title={hasActiveItems ? 'Cannot resolve with active tasks or SOS alerts' : 'Verify & Resolve Disaster'}
             >
               Verify & Resolve Disaster
             </button>

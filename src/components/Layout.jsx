@@ -12,6 +12,7 @@ const navItems = [
   { to: '/', label: 'Dashboard', icon: 'dashboard' },
   { to: '/needs', label: 'Needs / SOS', icon: 'sos', highlight: true },
   { to: '/map', label: 'Live Map', icon: 'radar', highlight: true },
+  { to: '/sos-3d', label: 'SOS Dashboard 3D', icon: '3d_rotation', highlight: true },
   { to: '/disasters', label: 'Disaster Zones', icon: 'flood' },
   { to: '/relief', label: 'Relief Coordination', icon: 'volunteer_activism' },
   { to: '/resources', label: 'Resources', icon: 'inventory_2' },

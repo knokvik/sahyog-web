@@ -77,18 +77,50 @@ export function useDeleteSos() {
   });
 }
 
+export function useUpdateSosStatus() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status, resolution_proof, resolution_notes }) =>
+      apiRequest(apiPaths.sosDetail(id) + '/status', { 
+        method: 'PATCH', 
+        body: JSON.stringify({ status, resolution_proof, resolution_notes }) 
+      }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sos', 'list'] });
+    },
+    onError: (error) => {
+      // Handle proof requirement error for volunteers
+      if (error.status === 403 && error.message?.includes('proof')) {
+        throw new Error('Resolution requires photo/video proof. Upload proof and try again.');
+      }
+      throw error;
+    }
+  });
+}
+
 export function useUpdateNeedStatus() {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, action, volunteer_id }) => {
+    mutationFn: ({ id, action, volunteer_id, resolution_proof, resolution_notes }) => {
       // action = 'resolve' or 'assign'
       const path = action === 'assign' ? apiPaths.needAssign(id) : apiPaths.needResolve(id);
-      return apiRequest(path, { method: 'PATCH', body: JSON.stringify({ volunteer_id }) }, getToken);
+      const body = action === 'assign' 
+        ? { volunteer_id } 
+        : { resolution_proof, resolution_notes };
+      return apiRequest(path, { method: 'PATCH', body: JSON.stringify(body) }, getToken);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['needs'] });
     },
+    onError: (error) => {
+      // Handle proof requirement error
+      if (error.status === 403 && error.message?.includes('proof')) {
+        throw new Error('Resolution requires photo/video proof of fulfillment. Please upload proof and try again.');
+      }
+      throw error;
+    }
   });
 }
 
@@ -134,6 +166,18 @@ export function useResolveDisaster() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['disasters'] });
     },
+    onError: (error) => {
+      // Handle new validation errors from backend
+      if (error.status === 400 && error.details?.active_tasks !== undefined) {
+        throw new Error(
+          `Cannot resolve disaster with active items: ${error.details.active_tasks} tasks, ${error.details.active_sos} SOS alerts`
+        );
+      }
+      if (error.status === 403) {
+        throw new Error('Only administrators or coordinators can resolve disasters');
+      }
+      throw error;
+    }
   });
 }
 

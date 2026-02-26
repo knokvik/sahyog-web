@@ -34,6 +34,20 @@ export function useDeleteZone(disasterId) {
             method: 'DELETE',
         }, getToken),
         onSuccess: () => qc.invalidateQueries({ queryKey: ['relief-zones', disasterId] }),
+        onError: (error) => {
+            // Handle zone deletion protection error
+            if (error.status === 400 && error.details?.active_tasks !== undefined) {
+                const { active_tasks, active_volunteers, active_coordinators, deployed_resources } = error.details;
+                const totalActive = active_tasks + active_volunteers + active_coordinators + deployed_resources;
+                throw new Error(
+                    `Cannot delete zone with ${totalActive} active assignment(s). ` +
+                    `Active: ${active_tasks} tasks, ${active_volunteers} volunteers, ` +
+                    `${active_coordinators} coordinators, ${deployed_resources} resources. ` +
+                    `Reassign or complete all activities first.`
+                );
+            }
+            throw error;
+        }
     });
 }
 

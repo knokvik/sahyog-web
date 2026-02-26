@@ -5,6 +5,7 @@ import io from 'socket.io-client';
 import { useAuth } from '@clerk/clerk-react';
 import { apiRequest, apiPaths } from '../lib/api';
 import 'leaflet/dist/leaflet.css';
+import ThreeDModal from '../components/ThreeDModal';
 
 // Fix for default marker icons in react-leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -83,6 +84,7 @@ export function LiveMap() {
     const [alerts, setAlerts] = useState({}); // { id: alertData }
     const [volunteers, setVolunteers] = useState({}); // { id: userData }
     const [mapCenter, setMapCenter] = useState(null);
+    const [selectedAlertFor3D, setSelectedAlertFor3D] = useState(null);
     const { getToken, isLoaded, isSignedIn } = useAuth();
 
     useEffect(() => {
@@ -199,12 +201,21 @@ export function LiveMap() {
                                     <p style={{ margin: '4px 0', fontSize: '13px' }}><strong>Reporter:</strong> {alert.reporter_name || 'Anonymous'}</p>
                                     <p style={{ margin: '4px 0', fontSize: '13px' }}><strong>Phone:</strong> {alert.reporter_phone || '—'}</p>
                                     <p style={{ margin: '4px 0', fontSize: '11px', color: '#64748b' }}>{new Date(alert.created_at).toLocaleString()}</p>
-                                    <button
-                                        style={{ marginTop: '10px', width: '100%', padding: '6px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
-                                        onClick={() => window.location.href = `/sos`}
-                                    >
-                                        Manage Alert
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                                        <button
+                                            style={{ flex: 1, padding: '6px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                                            onClick={() => window.location.href = `/sos`}
+                                        >
+                                            Manage
+                                        </button>
+                                        <button
+                                            style={{ flex: 1, padding: '6px', background: '#1e1e1e', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                                            onClick={() => setSelectedAlertFor3D({ ...alert, lat, lng })}
+                                        >
+                                            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>3d_rotation</span>
+                                            3D View
+                                        </button>
+                                    </div>
                                 </div>
                             </Popup>
                         </Marker>
@@ -246,6 +257,15 @@ export function LiveMap() {
                     </div>
                 </div>
             </div>
+
+            {/* 3D Viewer Modal */}
+            <ThreeDModal
+                isOpen={!!selectedAlertFor3D}
+                onClose={() => setSelectedAlertFor3D(null)}
+                lat={selectedAlertFor3D?.lat}
+                lng={selectedAlertFor3D?.lng}
+                alertInfo={selectedAlertFor3D}
+            />
         </div>
     );
 }
