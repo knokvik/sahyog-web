@@ -18,7 +18,6 @@ import { UsersList } from './pages/UsersList';
 import { ServerMonitor } from './pages/ServerMonitor';
 import { ReliefCoordination } from './pages/ReliefCoordination';
 import { LiveMap } from './pages/LiveMap';
-import SOSDashboard from './pages/SOSDashboard';
 import { OrgOnboarding } from './pages/org/OrgOnboarding';
 import { OrgDashboard } from './pages/org/OrgDashboard';
 import { OrgVolunteers } from './pages/org/OrgVolunteers';
@@ -111,7 +110,6 @@ function AppRoutes() {
         <Route path="users" element={<UsersList />} />
         <Route path="relief" element={<ReliefCoordination />} />
         <Route path="map" element={<LiveMap />} />
-        <Route path="sos-3d" element={<SOSDashboard />} />
         <Route path="server" element={<ServerMonitor />} />
       </Route>
 
