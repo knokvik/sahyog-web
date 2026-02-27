@@ -7,7 +7,12 @@ const getBaseUrl = () => import.meta.env.VITE_API_URL ?? '';
 
 export async function apiRequest(path, options = {}, getToken) {
   const base = getBaseUrl();
-  const url = path.startsWith('http') ? path : `${base}${path}`;
+  const query = options.query || null;
+  const pathWithQuery =
+    query && typeof query === 'object'
+      ? `${path}${path.includes('?') ? '&' : '?'}${new URLSearchParams(query).toString()}`
+      : path;
+  const url = pathWithQuery.startsWith('http') ? pathWithQuery : `${base}${pathWithQuery}`;
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers,
@@ -20,7 +25,8 @@ export async function apiRequest(path, options = {}, getToken) {
       console.warn('Could not get auth token', e);
     }
   }
-  const res = await fetch(url, { ...options, headers });
+  const { query: _ignoredQuery, ...fetchOptions } = options;
+  const res = await fetch(url, { ...fetchOptions, headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     let msg = data.message || res.statusText || 'Request failed';
@@ -71,18 +77,25 @@ export const apiPaths = {
 
   zones: '/api/v1/zones',
   zoneAssign: (id) => `/api/v1/zones/${id}/coordinator`,
+  zonesSummary: '/api/v1/zones/summary',
+  zonesGeojson: '/api/v1/zones/geojson',
 
   tasks: '/api/v1/tasks/pending',
   createTask: '/api/v1/tasks',
   updateTaskStatus: (id) => `/api/v1/tasks/${id}/status`,
+  tasksEscalated: '/api/v1/tasks/escalated',
 
   resources: '/api/v1/resources',
 
   missing: '/api/v1/missing',
   markFound: (id) => `/api/v1/missing/${id}/found`,
+  activeNeeds: '/api/v1/needs/active',
 
   serverStats: '/api/v1/server/stats',
   search: (query) => `/api/v1/search?q=${encodeURIComponent(query)}`,
+  volunteerLocations: '/api/v1/volunteers/locations',
+  coordinatorsMetrics: '/api/v1/coordinators/metrics',
+  disasterReport: (id) => `/api/v1/disasters/${id}/report`,
 
   // Organization endpoints
   orgRegister: '/api/v1/organizations/register',
@@ -104,4 +117,9 @@ export const apiPaths = {
   // Volunteer assignments
   myAssignments: '/api/v1/volunteer-assignments/mine',
   respondAssignment: (id) => `/api/v1/volunteer-assignments/${id}/respond`,
+
+  // Admin workflows
+  adminReassignTasks: '/api/v1/admin/workflows/reassign-tasks',
+  adminDeactivateVolunteer: (id) => `/api/v1/admin/workflows/volunteers/${id}/deactivate`,
+  adminFreezeZone: (id) => `/api/v1/admin/workflows/zones/${id}/freeze`,
 };

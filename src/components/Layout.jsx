@@ -9,15 +9,21 @@ import BrandIcon from '../assets/favicon.svg';
 import styles from './Layout.module.css';
 
 const navItems = [
-  { to: '/', label: 'Dashboard', icon: 'dashboard' },
-  { to: '/needs', label: 'Needs / SOS', icon: 'sos', highlight: true },
-  { to: '/map', label: 'Live Map', icon: 'radar', highlight: true },
+  { to: '/dashboard', label: 'Dashboard', icon: 'dashboard', highlight: true },
+  { to: '/zones', label: 'Zone Control', icon: 'hub', highlight: true },
+  { to: '/escalations', label: 'Escalations', icon: 'priority_high', highlight: true },
+  { to: '/map', label: 'Deployment Map', icon: 'map', highlight: true },
+  { to: '/coordinators', label: 'Coordinators', icon: 'insights' },
+  { to: '/reports', label: 'Reports', icon: 'summarize' },
+  { to: '/settings', label: 'Settings', icon: 'settings' },
+  { to: '/needs', label: 'Needs / SOS', icon: 'sos' },
   { to: '/disasters', label: 'Disaster Zones', icon: 'flood' },
   { to: '/relief', label: 'Relief Coordination', icon: 'volunteer_activism' },
   { to: '/resources', label: 'Resources', icon: 'inventory_2' },
   { to: '/missing', label: 'Missing Persons', icon: 'person_search' },
   { to: '/users', label: 'User Management', icon: 'admin_panel_settings' },
   { to: '/server', label: 'Server Monitor', icon: 'monitor_heart' },
+  { to: '/live-map', label: 'Legacy Live Map', icon: 'radar' },
 ];
 
 export function Layout() {

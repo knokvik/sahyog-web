@@ -26,6 +26,15 @@ import { OrgTasks } from './pages/org/OrgTasks';
 import { OrgZones } from './pages/org/OrgZones';
 import { OrgProfile } from './pages/org/OrgProfile';
 import { OrgRequests } from './pages/org/OrgRequests';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { CommandDashboard } from './pages/command-center/CommandDashboard';
+import { ZonesPage } from './pages/command-center/ZonesPage';
+import { ZoneDetailsPage } from './pages/command-center/ZoneDetailsPage';
+import { EscalationsPage } from './pages/command-center/EscalationsPage';
+import { DeploymentMapPage } from './pages/command-center/DeploymentMapPage';
+import { CoordinatorAnalyticsPage } from './pages/command-center/CoordinatorAnalyticsPage';
+import { ReportsPage } from './pages/command-center/ReportsPage';
+import { SettingsPage } from './pages/command-center/SettingsPage';
 
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 if (!publishableKey) {
@@ -100,6 +109,13 @@ function AppRoutes() {
         }
       >
         <Route index element={<Dashboard />} />
+        <Route path="dashboard" element={<CommandDashboard />} />
+        <Route path="zones" element={<ZonesPage />} />
+        <Route path="zones/:id" element={<ZoneDetailsPage />} />
+        <Route path="escalations" element={<EscalationsPage />} />
+        <Route path="coordinators" element={<CoordinatorAnalyticsPage />} />
+        <Route path="reports" element={<ReportsPage />} />
+        <Route path="settings" element={<SettingsPage />} />
         <Route path="needs" element={<SosList />} />
         <Route path="sos" element={<SosList />} />
         <Route path="disasters" element={<DisastersList />} />
@@ -109,7 +125,8 @@ function AppRoutes() {
         <Route path="missing" element={<MissingList />} />
         <Route path="users" element={<UsersList />} />
         <Route path="relief" element={<ReliefCoordination />} />
-        <Route path="map" element={<LiveMap />} />
+        <Route path="map" element={<DeploymentMapPage />} />
+        <Route path="live-map" element={<LiveMap />} />
         <Route path="server" element={<ServerMonitor />} />
       </Route>
 
@@ -484,9 +501,11 @@ export default function App() {
       <Provider store={store}>
         <QueryClientProvider client={queryClient}>
           <RealtimeProvider>
-            <BrowserRouter>
-              <AppRoutes />
-            </BrowserRouter>
+            <ErrorBoundary>
+              <BrowserRouter>
+                <AppRoutes />
+              </BrowserRouter>
+            </ErrorBoundary>
           </RealtimeProvider>
         </QueryClientProvider>
       </Provider>
