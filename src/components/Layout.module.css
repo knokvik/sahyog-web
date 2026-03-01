@@ -330,8 +330,8 @@
 .newsTickerWrapper {
   display: flex;
   align-items: center;
-  background-color: #fffbdd;
-  border-bottom: 1px solid #fde047;
+  background-color: var(--color-surface, #fff);
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
   height: 40px;
   overflow: hidden;
   flex-shrink: 0;
@@ -339,10 +339,8 @@
 
 /* Dark mode support */
 :global([data-theme="dark"]) .newsTickerWrapper {
-  background-color: #422006;
-  /* Dark amber/orange tint */
-  border-bottom: 1px solid #78350f;
-  color: #fde68a;
+  background-color: var(--color-surface, #1e293b);
+  border-bottom: 1px solid var(--color-border, #334155);
 }
 
 .newsTickerBadge {
@@ -353,17 +351,19 @@
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.5px;
-  color: #b45309;
+  color: #ef4444;
   z-index: 2;
-  background-color: #fef08a;
+  background-color: var(--color-bg-hover, #f8fafc);
+  border-right: 1px solid var(--color-border, #e2e8f0);
   height: 100%;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
   flex-shrink: 0;
 }
 
 :global([data-theme="dark"]) .newsTickerBadge {
-  background-color: #78350f;
-  color: #fde68a;
+  background-color: var(--color-sidebar-bg, #0f172a);
+  border-right: 1px solid var(--color-border, #334155);
+  color: #ef4444;
 }
 
 .pulseDot {
@@ -406,11 +406,11 @@
   animation: ticker-scroll 35s linear infinite;
   font-size: 13px;
   font-weight: 500;
-  color: #92400e;
+  color: var(--color-text, #0f172a);
 }
 
 :global([data-theme="dark"]) .newsTickerTrack {
-  color: #fef3c7;
+  color: var(--color-text, #f8fafc);
 }
 
 .newsTickerTrack:hover {
@@ -419,12 +419,12 @@
 
 .tickerSeparator {
   margin: 0 24px;
-  color: #fcd34d;
+  color: var(--color-border, #cbd5e1);
   opacity: 0.5;
 }
 
 :global([data-theme="dark"]) .tickerSeparator {
-  color: #b45309;
+  color: var(--color-border, #475569);
 }
 
 @keyframes ticker-scroll {
