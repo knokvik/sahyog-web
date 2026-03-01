@@ -36,7 +36,7 @@ import { EscalationsPage } from './pages/command-center/EscalationsPage';
 import { DeploymentMapPage } from './pages/command-center/DeploymentMapPage';
 import { CoordinatorAnalyticsPage } from './pages/command-center/CoordinatorAnalyticsPage';
 import { ReportsPage } from './pages/command-center/ReportsPage';
-import { SettingsPage } from './pages/command-center/SettingsPage';
+
 
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 if (!publishableKey) {
@@ -119,7 +119,7 @@ function AppRoutes() {
         <Route path="escalations" element={<EscalationsPage />} />
         <Route path="coordinators" element={<CoordinatorAnalyticsPage />} />
         <Route path="reports" element={<ReportsPage />} />
-        <Route path="settings" element={<SettingsPage />} />
+
         <Route path="needs" element={<SosList />} />
         <Route path="sos" element={<SosList />} />
         <Route path="disasters" element={<DisastersList />} />

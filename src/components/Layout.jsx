@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { toggleSidebar, toggleTheme, selectTheme } from '../store/slices/uiSlice';
 import { useMe } from '../api/hooks';
 import { SearchResultsPopup } from './SearchResultsPopup';
+import { SettingsPanel } from './SettingsPanel';
 import BrandIcon from '../assets/favicon.svg';
 import styles from './Layout.module.css';
 
@@ -17,7 +18,6 @@ const navItems = [
   { to: '/map', label: 'Deployment Map', icon: 'map', highlight: true },
   { to: '/coordinators', label: 'Coordinators', icon: 'insights' },
   { to: '/reports', label: 'Reports', icon: 'summarize' },
-  { to: '/settings', label: 'Settings', icon: 'settings' },
   { to: '/needs', label: 'Needs / SOS', icon: 'sos' },
   { to: '/disasters', label: 'Disaster Zones', icon: 'flood' },
   { to: '/relief', label: 'Relief Coordination', icon: 'volunteer_activism' },
@@ -37,6 +37,7 @@ export function Layout() {
   const role = me?.role ?? '—';
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const searchContainerRef = useRef(null);
 
   useEffect(() => {
@@ -173,7 +174,7 @@ export function Layout() {
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>notifications</span>
               <span className={styles.notifDot} />
             </button>
-            <button type="button" className={styles.headerIcon} aria-label="Settings">
+            <button type="button" className={styles.headerIcon} aria-label="Settings" onClick={() => setIsSettingsOpen(true)}>
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>settings</span>
             </button>
             <div className={styles.divider} />
@@ -222,6 +223,8 @@ export function Layout() {
           <Outlet />
         </div>
       </main>
+
+      <SettingsPanel isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );
 }
