@@ -1,6 +1,7 @@
 /* ── ResQConnect Dashboard ── */
 
 .page {
+  padding: 1rem;
   max-width: 1400px;
   animation: fadeIn 0.35s ease-out;
 }

@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* ── ResQConnect Design System ── */
 /* Inspired by ResQConnect emergency response UI */
 

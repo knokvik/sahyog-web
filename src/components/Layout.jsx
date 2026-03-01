@@ -1,23 +1,33 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { UserButton, useUser } from '@clerk/clerk-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleSidebar, toggleTheme, selectTheme } from '../store/slices/uiSlice';
+import io from 'socket.io-client';
 import { useMe } from '../api/hooks';
 import { SearchResultsPopup } from './SearchResultsPopup';
+import { SettingsPanel } from './SettingsPanel';
+import { NotificationsPanel } from './NotificationsPanel';
 import BrandIcon from '../assets/favicon.svg';
 import styles from './Layout.module.css';
 
 const navItems = [
-  { to: '/', label: 'Dashboard', icon: 'dashboard' },
-  { to: '/needs', label: 'Needs / SOS', icon: 'sos', highlight: true },
-  { to: '/map', label: 'Live Map', icon: 'radar', highlight: true },
+  { to: '/', label: 'Home', icon: 'home', highlight: true },
+  { to: '/orchestrator', label: 'Orchestrator', icon: 'cell_tower', highlight: true },
+  { to: '/dashboard', label: 'Dashboard', icon: 'dashboard', highlight: true },
+  { to: '/zones', label: 'Zone Control', icon: 'hub', highlight: true },
+  { to: '/escalations', label: 'Escalations', icon: 'priority_high', highlight: true },
+  { to: '/map', label: 'Deployment Map', icon: 'map', highlight: true },
+  { to: '/coordinators', label: 'Coordinators', icon: 'insights' },
+  { to: '/reports', label: 'Reports', icon: 'summarize' },
+  { to: '/needs', label: 'Needs / SOS', icon: 'sos' },
   { to: '/disasters', label: 'Disaster Zones', icon: 'flood' },
   { to: '/relief', label: 'Relief Coordination', icon: 'volunteer_activism' },
   { to: '/resources', label: 'Resources', icon: 'inventory_2' },
   { to: '/missing', label: 'Missing Persons', icon: 'person_search' },
   { to: '/users', label: 'User Management', icon: 'admin_panel_settings' },
   { to: '/server', label: 'Server Monitor', icon: 'monitor_heart' },
+  { to: '/live-map', label: 'Legacy Live Map', icon: 'radar' },
 ];
 
 export function Layout() {
@@ -29,6 +39,8 @@ export function Layout() {
   const role = me?.role ?? '—';
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const searchContainerRef = useRef(null);
 
   useEffect(() => {
@@ -42,6 +54,20 @@ export function Layout() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [searchContainerRef]);
+
+  // Socket listener to auto-open notifications panel on orchestrator signals
+  useEffect(() => {
+    const socketUrl = import.meta.env.VITE_API_URL || window.location.origin;
+    const socket = io(socketUrl, { transports: ['websocket', 'polling'] });
+
+    socket.on('orchestrator:update', (payload) => {
+      // Auto-open notifications panel when a new dispatch/signal triggers
+      setIsNotificationsOpen(true);
+      // Optional: Add to a global notification array state if you build out the panel more
+    });
+
+    return () => socket.disconnect();
+  }, []);
 
   const displayName = clerkUser
     ? [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || clerkUser.primaryEmailAddress?.emailAddress || 'Admin User'
@@ -161,11 +187,11 @@ export function Layout() {
                 {theme === 'dark' ? 'light_mode' : 'dark_mode'}
               </span>
             </button>
-            <button type="button" className={styles.headerIcon} aria-label="Notifications">
+            <button type="button" className={styles.headerIcon} aria-label="Notifications" onClick={() => setIsNotificationsOpen(true)}>
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>notifications</span>
               <span className={styles.notifDot} />
             </button>
-            <button type="button" className={styles.headerIcon} aria-label="Settings">
+            <button type="button" className={styles.headerIcon} aria-label="Settings" onClick={() => setIsSettingsOpen(true)}>
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>settings</span>
             </button>
             <div className={styles.divider} />
@@ -182,10 +208,41 @@ export function Layout() {
           </div>
         </header>
 
+        {/* Live News Ticker */}
+        <div className={styles.newsTickerWrapper}>
+          <div className={styles.newsTickerBadge}>
+            <span className={styles.pulseDot}></span>
+            LIVE NEWS
+          </div>
+          <div className={styles.newsTickerContent}>
+            <div className={styles.newsTickerTrack}>
+              <span>🚨 NDRF teams deployed to Sector 4 affected by flash floods.</span>
+              <span className={styles.tickerSeparator}>|</span>
+              <span>⚠️ Heavy rainfall alert issued for the coastal regions over the next 48 hours.</span>
+              <span className={styles.tickerSeparator}>|</span>
+              <span>🚁 Medical supplies airdropped in remote areas.</span>
+              <span className={styles.tickerSeparator}>|</span>
+              <span>🟢 Communication mesh networking is fully active in rural offline zones.</span>
+              {/* Duplicate for infinite scroll loop */}
+              <span className={styles.tickerSeparator}>|</span>
+              <span>🚨 NDRF teams deployed to Sector 4 affected by flash floods.</span>
+              <span className={styles.tickerSeparator}>|</span>
+              <span>⚠️ Heavy rainfall alert issued for the coastal regions over the next 48 hours.</span>
+              <span className={styles.tickerSeparator}>|</span>
+              <span>🚁 Medical supplies airdropped in remote areas.</span>
+              <span className={styles.tickerSeparator}>|</span>
+              <span>🟢 Communication mesh networking is fully active in rural offline zones.</span>
+            </div>
+          </div>
+        </div>
+
         <div className={styles.content}>
           <Outlet />
         </div>
       </main>
+
+      <SettingsPanel isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <NotificationsPanel isOpen={isNotificationsOpen} onClose={() => setIsNotificationsOpen(false)} />
     </div>
   );
 }

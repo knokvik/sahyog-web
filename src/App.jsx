@@ -10,6 +10,7 @@ import { OrgLayout } from './components/OrgLayout';
 import { RealtimeProvider } from './components/RealtimeProvider';
 import { Dashboard } from './pages/Dashboard';
 import { SosList } from './pages/SosList';
+import { UnifiedOrchestratorDashboard } from './pages/UnifiedOrchestratorDashboard';
 import { DisastersList } from './pages/DisastersList';
 import { VolunteersList } from './pages/VolunteersList';
 import { SheltersList } from './pages/SheltersList';
@@ -18,6 +19,7 @@ import { UsersList } from './pages/UsersList';
 import { ServerMonitor } from './pages/ServerMonitor';
 import { ReliefCoordination } from './pages/ReliefCoordination';
 import { LiveMap } from './pages/LiveMap';
+import { PublicHeatmap } from './pages/PublicHeatmap';
 import { OrgOnboarding } from './pages/org/OrgOnboarding';
 import { OrgDashboard } from './pages/org/OrgDashboard';
 import { OrgVolunteers } from './pages/org/OrgVolunteers';
@@ -26,6 +28,15 @@ import { OrgTasks } from './pages/org/OrgTasks';
 import { OrgZones } from './pages/org/OrgZones';
 import { OrgProfile } from './pages/org/OrgProfile';
 import { OrgRequests } from './pages/org/OrgRequests';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { CommandDashboard } from './pages/command-center/CommandDashboard';
+import { ZonesPage } from './pages/command-center/ZonesPage';
+import { ZoneDetailsPage } from './pages/command-center/ZoneDetailsPage';
+import { EscalationsPage } from './pages/command-center/EscalationsPage';
+import { DeploymentMapPage } from './pages/command-center/DeploymentMapPage';
+import { CoordinatorAnalyticsPage } from './pages/command-center/CoordinatorAnalyticsPage';
+import { ReportsPage } from './pages/command-center/ReportsPage';
+
 
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 if (!publishableKey) {
@@ -91,6 +102,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/sign-in/*" element={<SignInPage />} />
       <Route path="/sign-up/*" element={<SignUpPage />} />
+      <Route path="/public-heatmap" element={<PublicHeatmap />} />
       <Route
         path="/"
         element={
@@ -100,6 +112,14 @@ function AppRoutes() {
         }
       >
         <Route index element={<Dashboard />} />
+        <Route path="dashboard" element={<CommandDashboard />} />
+        <Route path="orchestrator" element={<UnifiedOrchestratorDashboard />} />
+        <Route path="zones" element={<ZonesPage />} />
+        <Route path="zones/:id" element={<ZoneDetailsPage />} />
+        <Route path="escalations" element={<EscalationsPage />} />
+        <Route path="coordinators" element={<CoordinatorAnalyticsPage />} />
+        <Route path="reports" element={<ReportsPage />} />
+
         <Route path="needs" element={<SosList />} />
         <Route path="sos" element={<SosList />} />
         <Route path="disasters" element={<DisastersList />} />
@@ -109,7 +129,8 @@ function AppRoutes() {
         <Route path="missing" element={<MissingList />} />
         <Route path="users" element={<UsersList />} />
         <Route path="relief" element={<ReliefCoordination />} />
-        <Route path="map" element={<LiveMap />} />
+        <Route path="map" element={<DeploymentMapPage />} />
+        <Route path="live-map" element={<LiveMap />} />
         <Route path="server" element={<ServerMonitor />} />
       </Route>
 
@@ -484,9 +505,11 @@ export default function App() {
       <Provider store={store}>
         <QueryClientProvider client={queryClient}>
           <RealtimeProvider>
-            <BrowserRouter>
-              <AppRoutes />
-            </BrowserRouter>
+            <ErrorBoundary>
+              <BrowserRouter>
+                <AppRoutes />
+              </BrowserRouter>
+            </ErrorBoundary>
           </RealtimeProvider>
         </QueryClientProvider>
       </Provider>

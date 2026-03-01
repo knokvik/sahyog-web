@@ -68,6 +68,7 @@ function ZoneMapTab({ disasterId, onOpenModal }) {
   const { data: users = [] } = useUsersList();
   const createZone = useCreateZone(disasterId);
   const deleteZone = useDeleteZone(disasterId);
+  const [deleteError, setDeleteError] = useState(null);
 
   const [drawing, setDrawing] = useState(false);
   const [severity, setSeverity] = useState('red');
@@ -251,20 +252,70 @@ function ZoneMapTab({ disasterId, onOpenModal }) {
 
         {/* Existing Zones List for deletion context */}
         {!drawing && zones.length > 0 && (
-          <div style={{ background: 'var(--color-surface)', padding: '12px 16px', borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', border: '1px solid var(--color-border)', maxWidth: 300, maxHeight: 200, overflowY: 'auto' }}>
+          <div style={{ background: 'var(--color-surface)', padding: '12px 16px', borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', border: '1px solid var(--color-border)', maxWidth: 320, maxHeight: 250, overflowY: 'auto' }}>
             <h4 style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--color-text-secondary)', fontWeight: 600 }}>Active Zones</h4>
+            
+            {/* Delete Error Message */}
+            {deleteError && (
+              <div style={{ 
+                marginBottom: 12, 
+                padding: '10px 12px', 
+                background: 'var(--badge-red-bg)', 
+                borderRadius: 8,
+                border: '1px solid var(--color-danger)',
+                color: 'var(--badge-red-fg)',
+                fontSize: 12
+              }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: 'middle', marginRight: 6 }}>error</span>
+                {deleteError}
+              </div>
+            )}
+            
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {zones.map(z => (
-                <div key={z.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: SEVERITY_COLORS[z.severity] }} />
-                    <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>{z.name}</span>
+              {zones.map(z => {
+                // Calculate total active assignments for this zone
+                const totalActive = (z.active_tasks || 0) + (z.active_volunteers || 0) + 
+                                   (z.active_coordinators || 0) + (z.deployed_resources || 0);
+                const canDelete = totalActive === 0;
+                
+                return (
+                  <div key={z.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+                      <span style={{ width: 10, height: 10, borderRadius: '50%', background: SEVERITY_COLORS[z.severity] }} />
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>{z.name}</span>
+                        {totalActive > 0 && (
+                          <span style={{ fontSize: 10, color: 'var(--color-warning)' }}>
+                            {totalActive} active assignment(s)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        setDeleteError(null);
+                        deleteZone.mutate(z.id, {
+                          onError: (error) => {
+                            setDeleteError(error.message);
+                          }
+                        });
+                      }} 
+                      disabled={!canDelete || deleteZone.isPending}
+                      style={{ 
+                        background: 'none', 
+                        border: 'none', 
+                        cursor: canDelete ? 'pointer' : 'not-allowed', 
+                        color: canDelete ? 'var(--color-danger)' : 'var(--color-text-muted)', 
+                        display: 'flex',
+                        opacity: canDelete ? 1 : 0.5
+                      }} 
+                      title={canDelete ? 'Delete zone' : `Cannot delete: ${totalActive} active assignment(s)`}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
+                    </button>
                   </div>
-                  <button onClick={() => deleteZone.mutate(z.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', display: 'flex' }} title="Delete zone">
-                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
