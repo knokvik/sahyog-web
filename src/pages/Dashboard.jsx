@@ -230,7 +230,6 @@ export function Dashboard() {
   return (
     <div className={styles.page}>
       {/* Stats */}
-      <br></br>
       <div className={styles.statsGrid}>
         <StatCard icon="sos" label="Active Needs" value={activeNeeds} sub={`${needsArr.length} total`} accent="danger" />
         <StatCard icon="flood" label="Active Zones" value={activeDisasters} sub={activeDisasters > 0 ? 'Monitoring' : 'All clear'} accent="warning" />
