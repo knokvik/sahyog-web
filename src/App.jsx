@@ -10,6 +10,7 @@ import { OrgLayout } from './components/OrgLayout';
 import { RealtimeProvider } from './components/RealtimeProvider';
 import { Dashboard } from './pages/Dashboard';
 import { SosList } from './pages/SosList';
+import { UnifiedOrchestratorDashboard } from './pages/UnifiedOrchestratorDashboard';
 import { DisastersList } from './pages/DisastersList';
 import { VolunteersList } from './pages/VolunteersList';
 import { SheltersList } from './pages/SheltersList';
@@ -112,6 +113,7 @@ function AppRoutes() {
       >
         <Route index element={<Dashboard />} />
         <Route path="dashboard" element={<CommandDashboard />} />
+        <Route path="orchestrator" element={<UnifiedOrchestratorDashboard />} />
         <Route path="zones" element={<ZonesPage />} />
         <Route path="zones/:id" element={<ZoneDetailsPage />} />
         <Route path="escalations" element={<EscalationsPage />} />

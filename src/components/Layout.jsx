@@ -9,6 +9,7 @@ import BrandIcon from '../assets/favicon.svg';
 import styles from './Layout.module.css';
 
 const navItems = [
+  { to: '/orchestrator', label: 'Orchestrator', icon: 'cell_tower', highlight: true },
   { to: '/dashboard', label: 'Dashboard', icon: 'dashboard', highlight: true },
   { to: '/zones', label: 'Zone Control', icon: 'hub', highlight: true },
   { to: '/escalations', label: 'Escalations', icon: 'priority_high', highlight: true },
