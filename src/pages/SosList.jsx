@@ -223,7 +223,26 @@ export function SosList() {
               rows.map(row => (
                 <tr key={row.id}>
                   <td><code className={styles.idCode}>#{row.id?.slice(0, 8)}</code></td>
-                  <td><StatusBadge status={row.status} /></td>
+                  <td>
+                    <StatusBadge status={row.status} />
+                    {row.relayed_via_mesh && (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '3px',
+                        marginLeft: '6px',
+                        padding: '2px 8px',
+                        borderRadius: '10px',
+                        fontSize: '10px',
+                        fontWeight: '700',
+                        background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+                        color: '#fff',
+                        letterSpacing: '0.3px',
+                      }}>
+                        📡 Mesh
+                      </span>
+                    )}
+                  </td>
                   <td>{row.volunteer_name ?? '—'}</td>
                   <td>{row.disaster_name ?? '—'}</td>
                   <td className={styles.timeCell}>{formatTime(row.created_at)}</td>

@@ -97,6 +97,12 @@ export const apiPaths = {
   coordinatorsMetrics: '/api/v1/coordinators/metrics',
   disasterReport: (id) => `/api/v1/disasters/${id}/report`,
 
+  // Live locations (Redis)
+  locations: '/api/v1/locations/all',
+  locationsFull: '/api/v1/locations/all/full',
+  locationsNearby: '/api/v1/locations/nearby',
+  locationUpdate: '/api/v1/locations/update',
+
   // Organization endpoints
   orgRegister: '/api/v1/organizations/register',
   orgMe: '/api/v1/organizations/me',

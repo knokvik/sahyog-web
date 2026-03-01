@@ -31,15 +31,23 @@ function parsePoint(item) {
   return null;
 }
 
-export function MapView({ zoneGeoJson, volunteers = [], needs = [] }) {
+export function MapView({ zoneGeoJson, volunteers = [], needs = [], liveLocations = [] }) {
   const features = zoneGeoJson?.features ?? zoneGeoJson ?? [];
+
+  const liveIcons = {
+    volunteer: L.divIcon({ className: 'cc-live-marker', html: '<div style="width:10px;height:10px;border-radius:999px;background:#2563eb;border:2px solid #fff;box-shadow:0 0 6px #2563eb88"></div>', iconSize: [10, 10], iconAnchor: [5, 5] }),
+    coordinator: L.divIcon({ className: 'cc-live-marker', html: '<div style="width:10px;height:10px;border-radius:999px;background:#10b981;border:2px solid #fff;box-shadow:0 0 6px #10b98188"></div>', iconSize: [10, 10], iconAnchor: [5, 5] }),
+    citizen: L.divIcon({ className: 'cc-live-marker', html: '<div style="width:10px;height:10px;border-radius:999px;background:#f59e0b;border:2px solid #fff;box-shadow:0 0 6px #f59e0b88"></div>', iconSize: [10, 10], iconAnchor: [5, 5] }),
+  };
+  const defaultLiveIcon = L.divIcon({ className: 'cc-live-marker', html: '<div style="width:10px;height:10px;border-radius:999px;background:#94a3b8;border:2px solid #fff"></div>', iconSize: [10, 10], iconAnchor: [5, 5] });
 
   return (
     <div className={styles.mapCard}>
       <div className={styles.mapLegend}>
         <span><i className={styles.legendDot} style={{ background: '#2563eb' }} /> Volunteers</span>
+        <span><i className={styles.legendDot} style={{ background: '#10b981' }} /> Coordinators</span>
+        <span><i className={styles.legendDot} style={{ background: '#f59e0b' }} /> Citizens</span>
         <span><i className={styles.legendDot} style={{ background: '#22c55e' }} /> Low urgency need</span>
-        <span><i className={styles.legendDot} style={{ background: '#f59e0b' }} /> Medium urgency need</span>
         <span><i className={styles.legendDot} style={{ background: '#ef4444' }} /> High urgency need</span>
       </div>
 
@@ -86,6 +94,24 @@ export function MapView({ zoneGeoJson, volunteers = [], needs = [] }) {
                 <strong>{need.title || need.type || 'Need'}</strong>
                 <div>Urgency: {need.urgency ?? need.priority_score ?? '—'}</div>
                 <div>Status: {need.status || 'active'}</div>
+              </Popup>
+            </Marker>
+          );
+        })}
+
+        {/* Live location markers from Redis */}
+        {liveLocations.map((loc, i) => {
+          const lat = parseFloat(loc.lat);
+          const lng = parseFloat(loc.lng);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+          const icon = liveIcons[loc.role] || defaultLiveIcon;
+          const roleName = { volunteer: 'Volunteer', coordinator: 'Coordinator', citizen: 'Citizen' }[loc.role] || 'User';
+          return (
+            <Marker key={loc.userId || `live-${i}`} position={[lat, lng]} icon={icon}>
+              <Popup>
+                <strong>{roleName}</strong>
+                {loc.name && <div style={{ fontSize: 12, color: '#64748b' }}>{loc.name}</div>}
+                <div style={{ fontSize: 11, color: '#94a3b8' }}>{lat.toFixed(4)}, {lng.toFixed(4)}</div>
               </Popup>
             </Marker>
           );

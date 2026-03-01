@@ -18,6 +18,7 @@ import { UsersList } from './pages/UsersList';
 import { ServerMonitor } from './pages/ServerMonitor';
 import { ReliefCoordination } from './pages/ReliefCoordination';
 import { LiveMap } from './pages/LiveMap';
+import { PublicHeatmap } from './pages/PublicHeatmap';
 import { OrgOnboarding } from './pages/org/OrgOnboarding';
 import { OrgDashboard } from './pages/org/OrgDashboard';
 import { OrgVolunteers } from './pages/org/OrgVolunteers';
@@ -100,7 +101,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/sign-in/*" element={<SignInPage />} />
       <Route path="/sign-up/*" element={<SignUpPage />} />
-      <Route path="/public-heatmap" element={<LiveMap />} />
+      <Route path="/public-heatmap" element={<PublicHeatmap />} />
       <Route
         path="/"
         element={
