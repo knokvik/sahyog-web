@@ -9,6 +9,7 @@ import BrandIcon from '../assets/favicon.svg';
 import styles from './Layout.module.css';
 
 const navItems = [
+  { to: '/', label: 'Home', icon: 'home', highlight: true },
   { to: '/orchestrator', label: 'Orchestrator', icon: 'cell_tower', highlight: true },
   { to: '/dashboard', label: 'Dashboard', icon: 'dashboard', highlight: true },
   { to: '/zones', label: 'Zone Control', icon: 'hub', highlight: true },
@@ -188,6 +189,34 @@ export function Layout() {
             </div>
           </div>
         </header>
+
+        {/* Live News Ticker */}
+        <div className={styles.newsTickerWrapper}>
+          <div className={styles.newsTickerBadge}>
+            <span className={styles.pulseDot}></span>
+            LIVE NEWS
+          </div>
+          <div className={styles.newsTickerContent}>
+            <div className={styles.newsTickerTrack}>
+              <span>🚨 NDRF teams deployed to Sector 4 affected by flash floods.</span>
+              <span className={styles.tickerSeparator}>|</span>
+              <span>⚠️ Heavy rainfall alert issued for the coastal regions over the next 48 hours.</span>
+              <span className={styles.tickerSeparator}>|</span>
+              <span>🚁 Medical supplies airdropped in remote areas.</span>
+              <span className={styles.tickerSeparator}>|</span>
+              <span>🟢 Communication mesh networking is fully active in rural offline zones.</span>
+              {/* Duplicate for infinite scroll loop */}
+              <span className={styles.tickerSeparator}>|</span>
+              <span>🚨 NDRF teams deployed to Sector 4 affected by flash floods.</span>
+              <span className={styles.tickerSeparator}>|</span>
+              <span>⚠️ Heavy rainfall alert issued for the coastal regions over the next 48 hours.</span>
+              <span className={styles.tickerSeparator}>|</span>
+              <span>🚁 Medical supplies airdropped in remote areas.</span>
+              <span className={styles.tickerSeparator}>|</span>
+              <span>🟢 Communication mesh networking is fully active in rural offline zones.</span>
+            </div>
+          </div>
+        </div>
 
         <div className={styles.content}>
           <Outlet />
