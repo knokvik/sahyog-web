@@ -100,6 +100,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/sign-in/*" element={<SignInPage />} />
       <Route path="/sign-up/*" element={<SignUpPage />} />
+      <Route path="/public-heatmap" element={<LiveMap />} />
       <Route
         path="/"
         element={
