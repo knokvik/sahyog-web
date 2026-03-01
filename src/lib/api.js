@@ -2,8 +2,9 @@
  * API client for Sahyog backend.
  * Uses Clerk session token for Authorization. getToken must be passed from Clerk useAuth().
  */
+import { getApiBaseUrl } from './network';
 
-const getBaseUrl = () => import.meta.env.VITE_API_URL ?? '';
+const getBaseUrl = () => getApiBaseUrl();
 
 export async function apiRequest(path, options = {}, getToken) {
   const base = getBaseUrl();
