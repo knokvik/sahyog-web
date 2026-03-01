@@ -230,6 +230,7 @@ export function Dashboard() {
   return (
     <div className={styles.page}>
       {/* Stats */}
+      <br></br>
       <div className={styles.statsGrid}>
         <StatCard icon="sos" label="Active Needs" value={activeNeeds} sub={`${needsArr.length} total`} accent="danger" />
         <StatCard icon="flood" label="Active Zones" value={activeDisasters} sub={activeDisasters > 0 ? 'Monitoring' : 'All clear'} accent="warning" />
@@ -258,16 +259,16 @@ export function Dashboard() {
                   </div>
                   <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 12 }}>
                     Assigned around {formatTime(a.created_at)}
-                    {a.coordinator_name && <><br/>Coordinator: {a.coordinator_name} ({a.coordinator_phone || 'N/A'})</>}
+                    {a.coordinator_name && <><br />Coordinator: {a.coordinator_name} ({a.coordinator_phone || 'N/A'})</>}
                   </div>
                   {a.status === 'pending' && (
                     <div style={{ display: 'flex', gap: 8 }}>
-                      <button 
+                      <button
                         onClick={() => respondAssignment.mutate({ id: a.id, status: 'accepted' })}
                         disabled={respondAssignment.isPending}
                         style={{ padding: '6px 14px', borderRadius: 6, border: 'none', background: '#34b27b', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}
                       >Accept</button>
-                      <button 
+                      <button
                         onClick={() => respondAssignment.mutate({ id: a.id, status: 'rejected' })}
                         disabled={respondAssignment.isPending}
                         style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #ef4444', background: 'transparent', color: '#ef4444', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}
