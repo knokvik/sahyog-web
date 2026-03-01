@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { UserButton, useUser } from '@clerk/clerk-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleSidebar, toggleTheme, selectTheme } from '../store/slices/uiSlice';
+import io from 'socket.io-client';
 import { useMe } from '../api/hooks';
 import { SearchResultsPopup } from './SearchResultsPopup';
 import { SettingsPanel } from './SettingsPanel';
@@ -53,6 +54,20 @@ export function Layout() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [searchContainerRef]);
+
+  // Socket listener to auto-open notifications panel on orchestrator signals
+  useEffect(() => {
+    const socketUrl = import.meta.env.VITE_API_URL || window.location.origin;
+    const socket = io(socketUrl, { transports: ['websocket', 'polling'] });
+
+    socket.on('orchestrator:update', (payload) => {
+      // Auto-open notifications panel when a new dispatch/signal triggers
+      setIsNotificationsOpen(true);
+      // Optional: Add to a global notification array state if you build out the panel more
+    });
+
+    return () => socket.disconnect();
+  }, []);
 
   const displayName = clerkUser
     ? [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || clerkUser.primaryEmailAddress?.emailAddress || 'Admin User'
