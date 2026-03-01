@@ -6,6 +6,7 @@ import { toggleSidebar, toggleTheme, selectTheme } from '../store/slices/uiSlice
 import { useMe } from '../api/hooks';
 import { SearchResultsPopup } from './SearchResultsPopup';
 import { SettingsPanel } from './SettingsPanel';
+import { NotificationsPanel } from './NotificationsPanel';
 import BrandIcon from '../assets/favicon.svg';
 import styles from './Layout.module.css';
 
@@ -38,6 +39,7 @@ export function Layout() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const searchContainerRef = useRef(null);
 
   useEffect(() => {
@@ -170,7 +172,7 @@ export function Layout() {
                 {theme === 'dark' ? 'light_mode' : 'dark_mode'}
               </span>
             </button>
-            <button type="button" className={styles.headerIcon} aria-label="Notifications">
+            <button type="button" className={styles.headerIcon} aria-label="Notifications" onClick={() => setIsNotificationsOpen(true)}>
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>notifications</span>
               <span className={styles.notifDot} />
             </button>
@@ -225,6 +227,7 @@ export function Layout() {
       </main>
 
       <SettingsPanel isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <NotificationsPanel isOpen={isNotificationsOpen} onClose={() => setIsNotificationsOpen(false)} />
     </div>
   );
 }
