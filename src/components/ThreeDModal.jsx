@@ -45,25 +45,47 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                 // --- 🎮 INTUITIVE CONTROL OPTIMIZATION (Google Maps Style) ---
                 const controller = viewer.scene.screenSpaceCameraController;
 
-                // Set mouse controls: Left = Rotate/Orbit, Right/Middle = Pan
-                controller.lookEventTypes = [Cesium.CameraEventType.LEFT_DRAG];
+                // Left drag = orbit/rotate around the target only
+                controller.lookEventTypes = [];
                 controller.rotateEventTypes = [Cesium.CameraEventType.LEFT_DRAG];
-                controller.translateEventTypes = [
-                    Cesium.CameraEventType.RIGHT_DRAG,
-                    Cesium.CameraEventType.MIDDLE_DRAG
-                ];
-                controller.tiltEventTypes = [
-                    Cesium.CameraEventType.RIGHT_DRAG,
-                    Cesium.CameraEventType.MIDDLE_DRAG
-                ];
+                // Disable free panning to prevent flying away from target
+                controller.translateEventTypes = [];
+                // Right drag = tilt only (no free pan)
+                controller.tiltEventTypes = [Cesium.CameraEventType.RIGHT_DRAG];
 
-                // Smooth settings for realistic feel
-                controller.maximumZoomDistance = 1500;
-                controller.minimumZoomDistance = 5;
-                controller.inertiaSpin = 0.8;
-                controller.inertiaTranslate = 0.8;
-                controller.inertiaZoom = 0.7;
+                // Constrain zoom and movement
+                controller.maximumZoomDistance = 3000;
+                controller.minimumZoomDistance = 50;
+                controller.inertiaSpin = 0.5;
+                controller.inertiaTranslate = 0;
+                controller.inertiaZoom = 0.5;
                 controller.enableCollisionDetection = true;
+
+                // --- 🔒 CLAMP CAMERA PITCH (prevent looking at horizon) ---
+                viewer.scene.postRender.addEventListener(() => {
+                    const camera = viewer.camera;
+                    const pitch = camera.pitch;
+                    const minPitch = Cesium.Math.toRadians(-90);  // straight down
+                    const maxPitch = Cesium.Math.toRadians(-20);  // max shallow angle
+
+                    if (pitch > maxPitch) {
+                        camera.setView({
+                            orientation: {
+                                heading: camera.heading,
+                                pitch: maxPitch,
+                                roll: camera.roll
+                            }
+                        });
+                    } else if (pitch < minPitch) {
+                        camera.setView({
+                            orientation: {
+                                heading: camera.heading,
+                                pitch: minPitch,
+                                roll: camera.roll
+                            }
+                        });
+                    }
+                });
 
                 // Visual Finish
                 viewer.scene.fog.enabled = true;
@@ -89,32 +111,55 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                         color: Cesium.Color.RED,
                         outlineColor: Cesium.Color.WHITE,
                         outlineWidth: 4,
-                        heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND
+                        heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+                        disableDepthTestDistance: Number.POSITIVE_INFINITY
                     },
                     label: {
                         text: alertInfo?.reporter_name || 'Emergency',
-                        font: 'bold 12pt Inter, sans-serif',
+                        font: 'bold 14pt Inter, sans-serif',
                         fillColor: Cesium.Color.WHITE,
                         outlineColor: Cesium.Color.BLACK,
                         outlineWidth: 3,
                         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
                         verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
                         pixelOffset: new Cesium.Cartesian2(0, -30),
-                        heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND
+                        heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+                        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+                        showBackground: true,
+                        backgroundColor: new Cesium.Color(0, 0, 0, 0.6)
                     }
                 });
 
-                // --- 🎥 INITIAL TARGETED ANIMATION ---
-                viewer.camera.flyTo({
-                    destination: Cesium.Cartesian3.fromDegrees(lng, lat, 150),
+                // --- 🎥 EPIC GLOBE-TO-TARGET FLY-IN ANIMATION ---
+                const targetCenter = Cesium.Cartesian3.fromDegrees(lng, lat, 10);
+
+                // Step 1: Start camera far away (globe view)
+                viewer.camera.setView({
+                    destination: Cesium.Cartesian3.fromDegrees(lng, lat, 8000000),
                     orientation: {
-                        heading: Cesium.Math.toRadians(0),
-                        pitch: Cesium.Math.toRadians(-35.0),
-                        roll: 0.0
-                    },
-                    duration: 3,
-                    easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT
+                        heading: 0,
+                        pitch: Cesium.Math.toRadians(-90),
+                        roll: 0
+                    }
                 });
+
+                // Step 2: Animate from globe down to SOS target (centered)
+                viewer.camera.flyToBoundingSphere(
+                    new Cesium.BoundingSphere(targetCenter, 0),
+                    {
+                        offset: new Cesium.HeadingPitchRange(
+                            Cesium.Math.toRadians(0),
+                            Cesium.Math.toRadians(-95.0),
+                            1500
+                        ),
+                        duration: 3.5,
+                        easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
+                        complete: () => {
+                            // Release the camera so user can interact freely
+                            viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+                        }
+                    }
+                );
 
             } catch (error) {
                 console.error('Cesium Integration Error:', error);
@@ -140,7 +185,7 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
         if (!viewerRef.current) return;
         const target = Cesium.Cartesian3.fromDegrees(lng, lat, 10);
         viewerRef.current.camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(lng, lat, 120),
+            destination: Cesium.Cartesian3.fromDegrees(lng, lat, 1200),
             orientation: {
                 heading: Cesium.Math.toRadians(0),
                 pitch: Cesium.Math.toRadians(-30),

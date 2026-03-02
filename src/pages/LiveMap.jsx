@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Tooltip, CircleMarker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet.heat';
 import io from 'socket.io-client';
@@ -140,7 +140,7 @@ function MapRecenter({ center }) {
 }
 
 function ZoomDisplay() {
-    const [zoom, setZoom] = useState(13);
+    const [zoom, setZoom] = useState(11);
     const map = useMapEvents({
         zoomend: () => {
             setZoom(map.getZoom());
@@ -346,7 +346,7 @@ export function LiveMap() {
         }}>
             <MapContainer
                 center={[18.5204, 73.8567]}
-                zoom={13}
+                zoom={11}
                 style={{ height: '100%', width: '100%' }}
             >
                 <TileLayer
@@ -416,6 +416,11 @@ export function LiveMap() {
 
                     return (
                         <Marker key={alert.id} position={[lat, lng]} icon={getSosIcon(isLive)}>
+                            <Tooltip direction="top" offset={[0, -12]} permanent className="sos-permanent-label">
+                                <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '11px', textShadow: '0 0 3px rgba(255,255,255,0.8)' }}>
+                                    🚨 {alert.reporter_name || alert.type || 'SOS Alert'}
+                                </span>
+                            </Tooltip>
                             <Popup>
                                 <div style={{ minWidth: '180px' }}>
                                     <h4 style={{ margin: '0 0 8px 0', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '4px' }}>
