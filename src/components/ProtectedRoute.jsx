@@ -206,7 +206,7 @@ const gateStyles = {
   },
 };
 
-export function ProtectedRoute({ children, allowedRoles = ['admin'] }) {
+export function ProtectedRoute({ children, allowedRoles = ['admin', 'coordinator', 'volunteer', 'user'] }) {
   const location = useLocation();
   return (
     <>

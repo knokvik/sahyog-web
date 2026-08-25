@@ -1,7 +1,12 @@
 /* ── ResQConnect Data List Pages ── */
 
 .page {
-  max-width: 1200px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
   animation: fadeIn 0.35s ease-out;
 }
 
@@ -22,7 +27,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 4px;
 }
 
 .pageHeaderLeft {
@@ -32,19 +37,19 @@
 }
 
 .title {
-  font-size: 20px;
-  font-weight: 900;
+  font-size: 24px;
+  font-weight: 800;
   color: var(--color-text-primary);
   margin: 0;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.5px;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
 .subtitle {
-  font-size: 12px;
-  color: var(--color-text-muted);
+  font-size: 13px;
+  color: var(--color-text-secondary);
   margin: 4px 0 0;
   font-weight: 500;
 }
@@ -138,22 +143,23 @@
 }
 
 .table th {
-  padding: 12px 20px;
+  padding: 12px 16px;
   text-align: left;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.5px;
   background: var(--color-bg);
   border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
 }
 
 .table td {
-  padding: 14px 20px;
+  padding: 13px 16px;
   font-size: 13px;
-  color: var(--color-text-secondary);
+  font-weight: 500;
+  color: var(--color-text-primary);
   border-bottom: 1px solid var(--color-border-light);
   vertical-align: middle;
 }
@@ -188,12 +194,11 @@
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 3px 10px;
-  border-radius: var(--radius-full);
-  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
 }
 
 .badge_success,

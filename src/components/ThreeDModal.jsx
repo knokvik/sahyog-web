@@ -7,21 +7,38 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
     const viewerRef = useRef(null);
     const [isLoading, setIsLoading] = useState(true);
     const [viewMode, setViewMode] = useState('aerial'); // 'aerial' | 'street'
+    const [errorMsg, setErrorMsg] = useState(null);
 
     const googleApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    const isRealGoogleKey = googleApiKey && !googleApiKey.includes('your_google_maps_api_key') && !googleApiKey.includes('placeholder');
+
+    const numLat = Number(lat) || (alertInfo?.lat ? Number(alertInfo.lat) : 19.0760);
+    const numLng = Number(lng) || (alertInfo?.lng ? Number(alertInfo.lng) : 72.8777);
 
     useEffect(() => {
         if (!isOpen || !containerRef.current || viewMode !== 'aerial') return;
 
         let viewer;
+        let isMounted = true;
+        setIsLoading(true);
+        setErrorMsg(null);
 
-        if (import.meta.env.VITE_CESIUM_ACCESS_TOKEN) {
-            Cesium.Ion.defaultAccessToken = import.meta.env.VITE_CESIUM_ACCESS_TOKEN;
+        const ionToken = (import.meta.env.VITE_CESIUM_ACCESS_TOKEN || '').trim();
+        const hasValidIonToken = ionToken && !ionToken.includes('your_cesium_ion') && !ionToken.includes('placeholder');
+        if (hasValidIonToken) {
+            Cesium.Ion.defaultAccessToken = ionToken;
         }
 
         const initCesium = async () => {
             try {
-                const terrainProvider = await Cesium.createWorldTerrainAsync?.() || undefined;
+                if (!containerRef.current) return;
+
+                // High-resolution satellite imagery layer that works reliably without requiring Ion token
+                const imageryProvider = new Cesium.UrlTemplateImageryProvider({
+                    url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                    maximumLevel: 19,
+                    credit: '© Esri, Maxar, Earthstar Geographics'
+                });
 
                 viewer = new Cesium.Viewer(containerRef.current, {
                     animation: false,
@@ -34,7 +51,7 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                     navigationHelpButton: false,
                     sceneModePicker: false,
                     fullscreenButton: false,
-                    terrainProvider: terrainProvider,
+                    imageryProvider: imageryProvider,
                     skyAtmosphere: new Cesium.SkyAtmosphere(),
                     shouldAnimate: true,
                     scene3DOnly: true,
@@ -42,72 +59,42 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
 
                 viewerRef.current = viewer;
 
-                // --- 🎮 INTUITIVE CONTROL OPTIMIZATION (Google Maps Style) ---
+                // --- 🎮 INTUITIVE CAMERA CONTROLS ---
                 const controller = viewer.scene.screenSpaceCameraController;
-
-                // Left drag = orbit/rotate around the target only
-                controller.lookEventTypes = [];
                 controller.rotateEventTypes = [Cesium.CameraEventType.LEFT_DRAG];
-                // Disable free panning to prevent flying away from target
-                controller.translateEventTypes = [];
-                // Right drag = tilt only (no free pan)
-                controller.tiltEventTypes = [Cesium.CameraEventType.RIGHT_DRAG];
-
-                // Constrain zoom and movement
-                controller.maximumZoomDistance = 3000;
-                controller.minimumZoomDistance = 50;
-                controller.inertiaSpin = 0.5;
-                controller.inertiaTranslate = 0;
+                controller.tiltEventTypes = [Cesium.CameraEventType.RIGHT_DRAG, Cesium.CameraEventType.MIDDLE_DRAG];
+                controller.maximumZoomDistance = 50000;
+                controller.minimumZoomDistance = 20;
+                controller.inertiaSpin = 0.6;
                 controller.inertiaZoom = 0.5;
-                controller.enableCollisionDetection = true;
-
-                // --- 🔒 CLAMP CAMERA PITCH (prevent looking at horizon) ---
-                viewer.scene.postRender.addEventListener(() => {
-                    const camera = viewer.camera;
-                    const pitch = camera.pitch;
-                    const minPitch = Cesium.Math.toRadians(-90);  // straight down
-                    const maxPitch = Cesium.Math.toRadians(-20);  // max shallow angle
-
-                    if (pitch > maxPitch) {
-                        camera.setView({
-                            orientation: {
-                                heading: camera.heading,
-                                pitch: maxPitch,
-                                roll: camera.roll
-                            }
-                        });
-                    } else if (pitch < minPitch) {
-                        camera.setView({
-                            orientation: {
-                                heading: camera.heading,
-                                pitch: minPitch,
-                                roll: camera.roll
-                            }
-                        });
-                    }
-                });
 
                 // Visual Finish
                 viewer.scene.fog.enabled = true;
-                viewer.scene.fog.density = 0.00015;
-                viewer.scene.globe.enableLighting = true;
-                viewer.scene.highDynamicRange = true;
-                viewer.scene.postProcessStages.fxaa.enabled = true;
+                viewer.scene.fog.density = 0.0001;
+                viewer.scene.globe.enableLighting = false;
 
-                // --- 🧱 GOOGLE PHOTOREALISTIC 3D TILES ---
-                const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2275207);
-                viewer.scene.primitives.add(tileset);
+                // Try to load 3D Tileset if valid Ion token is configured
+                if (hasValidIonToken) {
+                    try {
+                        const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2275207);
+                        if (viewer && !viewer.isDestroyed()) {
+                            viewer.scene.primitives.add(tileset);
+                        }
+                    } catch (tilesetErr) {
+                        console.warn('3D Tileset not available on this token, falling back to 3D satellite globe:', tilesetErr?.message);
+                    }
+                }
 
-                setIsLoading(false);
+                if (!isMounted || !viewer || viewer.isDestroyed()) return;
 
-                // --- 📍 PRIMARY SOS TARGET ---
-                const targetPos = Cesium.Cartesian3.fromDegrees(lng, lat, 10);
+                // --- 📍 PRIMARY SOS TARGET MARKER ---
+                const targetPos = Cesium.Cartesian3.fromDegrees(numLng, numLat, 15);
 
-                const sosEntity = viewer.entities.add({
-                    position: Cesium.Cartesian3.fromDegrees(lng, lat, 15),
+                viewer.entities.add({
+                    position: targetPos,
                     name: 'EMERGENCY SOS',
                     point: {
-                        pixelSize: 24,
+                        pixelSize: 22,
                         color: Cesium.Color.RED,
                         outlineColor: Cesium.Color.WHITE,
                         outlineWidth: 4,
@@ -115,27 +102,67 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                         disableDepthTestDistance: Number.POSITIVE_INFINITY
                     },
                     label: {
-                        text: alertInfo?.reporter_name || 'Emergency',
-                        font: 'bold 14pt Inter, sans-serif',
+                        text: `🚨 ${alertInfo?.reporter_name || alertInfo?.type || 'EMERGENCY SOS'}`,
+                        font: 'bold 13pt Inter, sans-serif',
                         fillColor: Cesium.Color.WHITE,
                         outlineColor: Cesium.Color.BLACK,
                         outlineWidth: 3,
                         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
                         verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-                        pixelOffset: new Cesium.Cartesian2(0, -30),
+                        pixelOffset: new Cesium.Cartesian2(0, -25),
                         heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
                         disableDepthTestDistance: Number.POSITIVE_INFINITY,
                         showBackground: true,
-                        backgroundColor: new Cesium.Color(0, 0, 0, 0.6)
+                        backgroundColor: new Cesium.Color(0.8, 0, 0, 0.75)
                     }
                 });
 
-                // --- 🎥 EPIC GLOBE-TO-TARGET FLY-IN ANIMATION ---
-                const targetCenter = Cesium.Cartesian3.fromDegrees(lng, lat, 10);
+                // --- 👥 RENDER NEARBY RESPONDERS & UNITS ---
+                if (Array.isArray(extraMarkers)) {
+                    extraMarkers.forEach((m) => {
+                        const mLat = Number(m.lat || (m.location?.coordinates ? m.location.coordinates[1] : 0));
+                        const mLng = Number(m.lng || (m.location?.coordinates ? m.location.coordinates[0] : 0));
+                        if (!mLat || !mLng || (mLat === numLat && mLng === numLng)) return;
 
-                // Step 1: Start camera far away (globe view)
+                        const isVolunteer = m.role === 'volunteer';
+                        const isCoordinator = m.role === 'coordinator';
+                        const color = isCoordinator ? Cesium.Color.SPRINGGREEN : isVolunteer ? Cesium.Color.DODGERBLUE : Cesium.Color.ORANGE;
+                        const labelText = m.full_name || m.name || m.reporter_name || (isVolunteer ? 'Volunteer' : 'Alert');
+
+                        viewer.entities.add({
+                            position: Cesium.Cartesian3.fromDegrees(mLng, mLat, 10),
+                            name: labelText,
+                            point: {
+                                pixelSize: 14,
+                                color: color,
+                                outlineColor: Cesium.Color.WHITE,
+                                outlineWidth: 2,
+                                heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+                                disableDepthTestDistance: Number.POSITIVE_INFINITY
+                            },
+                            label: {
+                                text: labelText,
+                                font: '10pt Inter, sans-serif',
+                                fillColor: Cesium.Color.WHITE,
+                                outlineColor: Cesium.Color.BLACK,
+                                outlineWidth: 2,
+                                style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                                verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                                pixelOffset: new Cesium.Cartesian2(0, -18),
+                                heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+                                disableDepthTestDistance: Number.POSITIVE_INFINITY,
+                                showBackground: true,
+                                backgroundColor: new Cesium.Color(0, 0, 0, 0.6)
+                            }
+                        });
+                    });
+                }
+
+                // --- 🎥 SMOOTH FLY-IN TO TARGET ---
+                const targetCenter = Cesium.Cartesian3.fromDegrees(numLng, numLat, 10);
+
                 viewer.camera.setView({
-                    destination: Cesium.Cartesian3.fromDegrees(lng, lat, 8000000),
+                    destination: Cesium.Cartesian3.fromDegrees(numLng, numLat, 4000000),
                     orientation: {
                         heading: 0,
                         pitch: Cesium.Math.toRadians(-90),
@@ -143,81 +170,81 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                     }
                 });
 
-                // Step 2: Animate from globe down to SOS target (centered)
                 viewer.camera.flyToBoundingSphere(
                     new Cesium.BoundingSphere(targetCenter, 0),
                     {
                         offset: new Cesium.HeadingPitchRange(
                             Cesium.Math.toRadians(0),
-                            Cesium.Math.toRadians(-95.0),
-                            1500
+                            Cesium.Math.toRadians(-45.0),
+                            1800
                         ),
-                        duration: 3.5,
+                        duration: 2.5,
                         easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
                         complete: () => {
-                            // Release the camera so user can interact freely
-                            viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+                            if (viewer && !viewer.isDestroyed()) {
+                                viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+                            }
                         }
                     }
                 );
 
+                setIsLoading(false);
             } catch (error) {
                 console.error('Cesium Integration Error:', error);
-                setIsLoading(false);
+                if (isMounted) {
+                    setErrorMsg(error?.message || 'Failed to initialize 3D Globe');
+                    setIsLoading(false);
+                }
             }
         };
 
-        if (viewMode === 'aerial') {
-            initCesium();
-        }
+        initCesium();
 
         return () => {
+            isMounted = false;
             if (viewer && !viewer.isDestroyed()) {
                 viewer.destroy();
                 viewerRef.current = null;
             }
         };
-    }, [isOpen, lat, lng, viewMode]);
+    }, [isOpen, numLat, numLng, viewMode, extraMarkers]);
 
     // --- 🕹️ TARGET-FOCUSED NAVIGATION ---
 
     const flyToReset = () => {
-        if (!viewerRef.current) return;
-        const target = Cesium.Cartesian3.fromDegrees(lng, lat, 10);
-        viewerRef.current.camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(lng, lat, 1200),
-            orientation: {
-                heading: Cesium.Math.toRadians(0),
-                pitch: Cesium.Math.toRadians(-30),
-                roll: 0
-            },
+        if (!viewerRef.current || viewerRef.current.isDestroyed()) return;
+        const target = Cesium.Cartesian3.fromDegrees(numLng, numLat, 10);
+        viewerRef.current.camera.flyToBoundingSphere(new Cesium.BoundingSphere(target, 0), {
+            offset: new Cesium.HeadingPitchRange(
+                Cesium.Math.toRadians(0),
+                Cesium.Math.toRadians(-45.0),
+                1800
+            ),
             duration: 1.5
         });
     };
 
     const zoomIn = () => {
-        if (!viewerRef.current) return;
-        viewerRef.current.camera.zoomIn(viewerRef.current.camera.positionCartographic.height * 0.3);
+        if (!viewerRef.current || viewerRef.current.isDestroyed()) return;
+        viewerRef.current.camera.zoomIn(viewerRef.current.camera.positionCartographic.height * 0.35);
     };
 
     const zoomOut = () => {
-        if (!viewerRef.current) return;
-        viewerRef.current.camera.zoomOut(viewerRef.current.camera.positionCartographic.height * 0.3);
+        if (!viewerRef.current || viewerRef.current.isDestroyed()) return;
+        viewerRef.current.camera.zoomOut(viewerRef.current.camera.positionCartographic.height * 0.35);
     };
 
     // FOCAL ROTATION: Orbit around the target marker
     const setFocalHeading = (degrees) => {
-        if (!viewerRef.current) return;
+        if (!viewerRef.current || viewerRef.current.isDestroyed()) return;
         const viewer = viewerRef.current;
-        const target = Cesium.Cartesian3.fromDegrees(lng, lat, 10);
-
-        // Calculate the current distance from target
-        const distance = Cesium.Cartesian3.distance(viewer.camera.position, target);
+        const target = Cesium.Cartesian3.fromDegrees(numLng, numLat, 10);
+        const distance = Math.max(500, Cesium.Cartesian3.distance(viewer.camera.position, target));
 
         viewer.camera.flyToBoundingSphere(new Cesium.BoundingSphere(target, distance), {
             offset: new Cesium.HeadingPitchRange(
                 Cesium.Math.toRadians(degrees),
-                viewer.camera.pitch,
+                viewer.camera.pitch || Cesium.Math.toRadians(-45),
                 distance
             ),
             duration: 1.0
@@ -272,8 +299,8 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                 {viewMode === 'aerial' && (
                     <div className="absolute left-6 bottom-10 z-30 flex flex-col gap-3 pointer-events-auto">
                         <div className="bg-black/80 backdrop-blur-3xl rounded-3xl p-2 border border-white/10 shadow-2xl flex flex-col gap-2">
-                            <button onClick={zoomIn} className="nav-icon-btn"><span className="material-symbols-outlined">add</span></button>
-                            <button onClick={zoomOut} className="nav-icon-btn"><span className="material-symbols-outlined">remove</span></button>
+                            <button onClick={zoomIn} className="nav-icon-btn" title="Zoom In"><span className="material-symbols-outlined">add</span></button>
+                            <button onClick={zoomOut} className="nav-icon-btn" title="Zoom Out"><span className="material-symbols-outlined">remove</span></button>
                             <div className="h-[1px] bg-white/5 mx-2" />
                             <div className="flex flex-col items-center gap-2 py-2">
                                 <span className="text-[8px] text-zinc-500 font-black tracking-widest uppercase">Target Orbit</span>
@@ -312,16 +339,21 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                                     <p className="text-zinc-600 font-black tracking-[0.5em] text-[10px] uppercase animate-pulse">Initializing Virtual Scan</p>
                                 </div>
                             )}
+                            {errorMsg && (
+                                <div className="absolute top-24 left-1/2 -translate-x-1/2 bg-red-950/80 border border-red-500/40 text-red-200 px-4 py-2 rounded-xl text-xs backdrop-blur-md">
+                                    {errorMsg}
+                                </div>
+                            )}
                         </>
                     ) : (
                         <div className="w-full h-full bg-zinc-950">
-                            {googleApiKey ? (
+                            {isRealGoogleKey ? (
                                 <iframe
                                     title="Street View"
                                     width="100%"
                                     height="100%"
                                     style={{ border: 0 }}
-                                    src={`https://www.google.com/maps/embed/v1/streetview?key=${googleApiKey}&location=${lat},${lng}&heading=0&pitch=0&fov=90`}
+                                    src={`https://www.google.com/maps/embed/v1/streetview?key=${googleApiKey}&location=${numLat},${numLng}&heading=0&pitch=0&fov=90`}
                                     allowFullScreen
                                 />
                             ) : (
@@ -332,11 +364,11 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                                     <div className="flex flex-col gap-3">
                                         <h3 className="text-zinc-200 font-black text-2xl tracking-tight">STREET VIEW RESTRICTED</h3>
                                         <p className="text-zinc-500 text-sm max-w-md mx-auto leading-relaxed font-medium">
-                                            VITE_GOOGLE_MAPS_API_KEY is missing. Add your API key to the environment configuration to enable secure embedded panorama viewing.
+                                            VITE_GOOGLE_MAPS_API_KEY is missing or using a placeholder. Add a valid API key to .env to enable embedded Street View panorama, or open native Google Maps below.
                                         </p>
                                     </div>
                                     <button
-                                        onClick={() => window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank')}
+                                        onClick={() => window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${numLat},${numLng}`, '_blank')}
                                         className="px-10 py-4 bg-zinc-100 hover:bg-white text-black font-black text-xs rounded-2xl transition-all shadow-2xl active:scale-95"
                                     >
                                         ACTIVATE NATIVE STREET VIEW
@@ -352,7 +384,7 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                     <div className="bg-black/80 backdrop-blur-3xl p-4 px-7 rounded-3xl border border-white/10 flex gap-10 shadow-2xl pointer-events-auto">
                         <div className="flex flex-col">
                             <span className="text-[10px] text-zinc-500 uppercase font-black tracking-widest">Target Position</span>
-                            <span className="text-zinc-100 text-sm font-mono tracking-tighter">{lat.toFixed(6)}°N, {lng.toFixed(6)}°E</span>
+                            <span className="text-zinc-100 text-sm font-mono tracking-tighter">{numLat.toFixed(6)}°N, {numLng.toFixed(6)}°E</span>
                         </div>
                         <div className="w-[1px] h-10 bg-white/10" />
                         <div className="flex flex-col">

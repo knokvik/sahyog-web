@@ -140,15 +140,16 @@ function MapRecenter({ center }) {
 }
 
 function ZoomDisplay() {
-    const [zoom, setZoom] = useState(11);
     const map = useMapEvents({
         zoomend: () => {
             setZoom(map.getZoom());
         },
     });
+    const [zoom, setZoom] = useState(() => map.getZoom() || 11);
 
-    const maxZoom = map.getMaxZoom() || 18;
-    const zoomPercent = Math.round((zoom / maxZoom) * 100);
+    const minZ = map.getMinZoom() || 3;
+    const maxZ = map.getMaxZoom() || 18;
+    const zoomPercent = Math.min(100, Math.max(10, Math.round(((zoom - minZ) / (maxZ - minZ)) * 90 + 10)));
 
     return (
         <div style={{
@@ -156,20 +157,24 @@ function ZoomDisplay() {
             bottom: '24px',
             left: '24px',
             zIndex: 1000,
-            background: 'var(--color-surface)',
-            padding: '6px 12px',
-            borderRadius: '20px',
-            boxShadow: 'var(--shadow-md)',
-            border: '1px solid var(--color-border)',
+            background: 'var(--color-surface, #ffffff)',
+            padding: '6px 14px',
+            borderRadius: '24px',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.12)',
+            border: '1px solid var(--color-border, #e2e8f0)',
             fontSize: '12px',
-            fontWeight: '600',
-            color: 'var(--color-text-primary)',
+            fontWeight: '700',
+            color: 'var(--color-text-primary, #0f172a)',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            gap: '8px',
+            backdropFilter: 'blur(8px)',
+            userSelect: 'none'
         }}>
-            <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--color-primary)' }}>zoom_in</span>
-            {zoomPercent >= 100 ? '100% ZOOM' : `${zoomPercent}% ZOOM`}
+            <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--color-primary, #34b27b)' }}>explore</span>
+            <span>{zoomPercent}% ZOOM</span>
+            <span style={{ color: 'var(--color-border, #cbd5e1)', margin: '0 2px' }}>|</span>
+            <span style={{ fontSize: '11px', color: 'var(--color-text-muted, #64748b)', fontWeight: 600 }}>Lvl {Math.round(zoom)}</span>
         </div>
     );
 }
@@ -338,15 +343,20 @@ export function LiveMap() {
 
     return (
         <div style={{
-            height: 'calc(100vh - 64px)',
-            width: 'calc(100% + 48px)',
-            margin: '-24px -24px -24px -24px',
+            height: '100%',
+            minHeight: 'calc(100vh - 105px)',
+            width: '100%',
             position: 'relative',
             overflow: 'hidden'
         }}>
             <MapContainer
                 center={[18.5204, 73.8567]}
                 zoom={11}
+                minZoom={3.5}
+                maxZoom={18}
+                maxBounds={[[-85, -180], [85, 180]]}
+                maxBoundsViscosity={1.0}
+                worldCopyJump={false}
                 style={{ height: '100%', width: '100%' }}
             >
                 <TileLayer
@@ -418,11 +428,11 @@ export function LiveMap() {
                         <Marker key={alert.id} position={[lat, lng]} icon={getSosIcon(isLive)}>
                             <Tooltip direction="top" offset={[0, -12]} permanent className="sos-permanent-label">
                                 <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '11px', textShadow: '0 0 3px rgba(255,255,255,0.8)' }}>
-                                    🚨 {alert.reporter_name || alert.type || 'SOS Alert'}
+                                    {alert.reporter_name || alert.type || 'SOS Alert'}
                                 </span>
                             </Tooltip>
                             <Popup>
-                                <div style={{ minWidth: '180px' }}>
+                                <div style={{ minWidth: '160px' }}>
                                     <h4 style={{ margin: '0 0 8px 0', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                         <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>emergency</span>
                                         SOS ALERT
@@ -433,17 +443,10 @@ export function LiveMap() {
                                     <p style={{ margin: '4px 0', fontSize: '11px', color: '#64748b' }}>{new Date(alert.created_at).toLocaleString()}</p>
                                     <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
                                         <button
-                                            style={{ flex: 1, padding: '6px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                                            style={{ flex: 1, padding: '6px 12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
                                             onClick={() => window.location.href = `/sos`}
                                         >
-                                            Manage
-                                        </button>
-                                        <button
-                                            style={{ flex: 1, padding: '6px', background: '#1e1e1e', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
-                                            onClick={() => setSelectedAlertFor3D({ ...alert, lat, lng })}
-                                        >
-                                            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>3d_rotation</span>
-                                            3D View
+                                            Manage SOS
                                         </button>
                                     </div>
                                 </div>
@@ -470,54 +473,51 @@ export function LiveMap() {
                 })}
             </MapContainer>
 
-            {/* Summary Overlay */}
-            <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 1000, background: 'rgba(255,255,255,0.9)', padding: '12px', borderRadius: '12px', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--color-border)', backdropFilter: 'blur(8px)', minWidth: '180px' }}>
-                <h3 style={{ margin: '0 0 10px 0', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#ef4444' }}>radar</span>
-                    Emergency Center
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '13px', color: '#64748b' }}>SOS Status:</span>
-                        <span style={{ fontSize: '13px', fontWeight: 'bold', color: alertList.length > 0 ? '#ef4444' : '#34b27b' }}>
-                            {alertList.length} Active
-                        </span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '13px', color: '#64748b' }}>Responders:</span>
-                        <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#3b82f6' }}>
-                            {volList.length} Online
-                        </span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '13px', color: '#64748b' }}>Heat Zones:</span>
-                        <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#f97316' }}>
-                            {heatmapPoints.length}
-                        </span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '13px', color: '#64748b' }}>Shelters:</span>
-                        <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#2563eb' }}>
-                            {shelters.length}
-                        </span>
-                    </div>
-                    {heatmapUpdatedAt && (
-                        <div style={{ marginTop: '6px', fontSize: '11px', color: '#94a3b8' }}>
-                            Heatmap updated: {new Date(heatmapUpdatedAt).toLocaleTimeString()}
-                        </div>
-                    )}
+            {/* Flat Emergency Status HUD Chip */}
+            <div style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                zIndex: 1000,
+                background: 'var(--color-surface, #ffffff)',
+                padding: '7px 16px',
+                borderRadius: '24px',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.12)',
+                border: '1px solid var(--color-border, #e2e8f0)',
+                fontSize: '12px',
+                fontWeight: '600',
+                color: 'var(--color-text-primary, #0f172a)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                backdropFilter: 'blur(8px)',
+                userSelect: 'none'
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#ef4444' }}>radar</span>
+                    <span style={{ fontWeight: '800', letterSpacing: '0.3px', fontSize: '11px', textTransform: 'uppercase', color: 'var(--color-text-secondary, #64748b)' }}>Emergency</span>
+                </div>
+                <span style={{ color: 'var(--color-border, #cbd5e1)' }}>|</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ color: alertList.length > 0 ? '#ef4444' : '#10b981', fontWeight: '800' }}>{alertList.length}</span>
+                    <span style={{ color: 'var(--color-text-muted, #64748b)', fontSize: '11px' }}>SOS</span>
+                </div>
+                <span style={{ color: 'var(--color-border, #cbd5e1)' }}>•</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ color: '#3b82f6', fontWeight: '800' }}>{volList.length}</span>
+                    <span style={{ color: 'var(--color-text-muted, #64748b)', fontSize: '11px' }}>Responders</span>
+                </div>
+                <span style={{ color: 'var(--color-border, #cbd5e1)' }}>•</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ color: '#f59e0b', fontWeight: '800' }}>{heatmapPoints.length}</span>
+                    <span style={{ color: 'var(--color-text-muted, #64748b)', fontSize: '11px' }}>Zones</span>
+                </div>
+                <span style={{ color: 'var(--color-border, #cbd5e1)' }}>•</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ color: '#10b981', fontWeight: '800' }}>{shelters.length}</span>
+                    <span style={{ color: 'var(--color-text-muted, #64748b)', fontSize: '11px' }}>Shelters</span>
                 </div>
             </div>
-
-            {/* 3D Viewer Modal */}
-            <ThreeDModal
-                isOpen={!!selectedAlertFor3D}
-                onClose={() => setSelectedAlertFor3D(null)}
-                lat={selectedAlertFor3D?.lat}
-                lng={selectedAlertFor3D?.lng}
-                alertInfo={selectedAlertFor3D}
-                extraMarkers={[...alertList, ...volList]}
-            />
         </div>
     );
 }

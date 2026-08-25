@@ -25,12 +25,12 @@ function useOrchestratorSummary() {
 // ── Source Badge ──────────────────────────────────────────────
 function SourceBadge({ source }) {
     const map = {
-        app: { label: '📱 App', cls: styles.sourceApp },
-        direct: { label: '📱 Direct', cls: styles.sourceDirect },
-        mesh_relay: { label: '📡 Mesh', cls: styles.sourceMesh },
-        mesh: { label: '📡 Mesh', cls: styles.sourceMesh },
-        beacon: { label: '📻 Beacon', cls: styles.sourceBeacon },
-        ivr: { label: '📞 IVR', cls: styles.sourceIvr },
+        app: { label: 'App', cls: styles.sourceApp },
+        direct: { label: 'Direct', cls: styles.sourceDirect },
+        mesh_relay: { label: 'Mesh Relay', cls: styles.sourceMesh },
+        mesh: { label: 'Mesh', cls: styles.sourceMesh },
+        beacon: { label: 'Beacon', cls: styles.sourceBeacon },
+        ivr: { label: 'IVR', cls: styles.sourceIvr },
     };
     const m = map[source] || { label: source || '?', cls: styles.sourceApp };
     return <span className={`${styles.sourceChip} ${m.cls}`}>{m.label}</span>;
@@ -39,11 +39,11 @@ function SourceBadge({ source }) {
 // ── Risk Level Badge ─────────────────────────────────────────
 function RiskBadge({ level }) {
     const map = {
-        critical: { cls: styles.riskCritical, label: '🔴 Critical' },
-        high: { cls: styles.riskHigh, label: '🟠 High' },
-        medium: { cls: styles.riskMedium, label: '🟡 Medium' },
-        low: { cls: styles.riskLow, label: '🟢 Low' },
-        pending: { cls: styles.riskPending, label: '⏳ Pending' },
+        critical: { cls: styles.riskCritical, label: 'Critical' },
+        high: { cls: styles.riskHigh, label: 'High' },
+        medium: { cls: styles.riskMedium, label: 'Medium' },
+        low: { cls: styles.riskLow, label: 'Low' },
+        pending: { cls: styles.riskPending, label: 'Pending' },
     };
     const m = map[level] || map.pending;
     return <span className={`${styles.riskBadge} ${m.cls}`}>{m.label}</span>;
@@ -78,7 +78,7 @@ export function UnifiedOrchestratorDashboard() {
     }, []);
 
     if (isLoading) return <div className={styles.loading}>Loading Orchestrator Dashboard…</div>;
-    if (error) return <div className={styles.error}>⚠️ Error: {error.message}</div>;
+    if (error) return <div className={styles.error}>Error: {error.message}</div>;
 
     const {
         total_active = 0,
@@ -198,7 +198,7 @@ export function UnifiedOrchestratorDashboard() {
                                             <SourceBadge source={sig.source} />
                                             {sig.relayed_via_mesh && (
                                                 <span className={`${styles.sourceChip} ${styles.sourceMesh}`} style={{ marginLeft: 4 }}>
-                                                    📡 Mesh
+                                                    Mesh
                                                 </span>
                                             )}
                                         </td>

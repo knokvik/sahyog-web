@@ -215,7 +215,7 @@ export function Dashboard() {
           <p className={styles.errorMsg}>{error.message}</p>
           {!healthLoading && (
             <p className={styles.errorConnect}>
-              Backend: <strong>{backendReachable ? '✅ Reachable' : '❌ Unreachable'}</strong>
+              Backend: <strong style={{ color: backendReachable ? '#16a34a' : '#ef4444' }}>{backendReachable ? 'Reachable' : 'Unreachable'}</strong>
               {!backendReachable && <span className={styles.errorHint}>Run <code>npm run dev</code> in the project root and refresh.</span>}
             </p>
           )}

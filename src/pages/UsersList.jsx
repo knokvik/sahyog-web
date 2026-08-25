@@ -31,7 +31,7 @@ export function UsersList() {
     const [filter, setFilter] = useState('All');
 
     if (isLoading) return <div className={styles.loading}>Loading users…</div>;
-    if (error) return <div className={styles.error}>⚠️ Error: {error.message}</div>;
+    if (error) return <div className={styles.error}>Error: {error.message}</div>;
 
     const allRows = (Array.isArray(list) ? list : []).filter(r => r.role !== 'organization');
     const rows = filter === 'All' ? allRows : allRows.filter(r => r.role === filter);

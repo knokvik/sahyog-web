@@ -51,7 +51,16 @@ export function MapView({ zoneGeoJson, volunteers = [], needs = [], liveLocation
         <span><i className={styles.legendDot} style={{ background: '#ef4444' }} /> High urgency need</span>
       </div>
 
-      <MapContainer center={[18.5204, 73.8567]} zoom={11} style={{ height: '66vh', width: '100%' }}>
+      <MapContainer
+        center={[18.5204, 73.8567]}
+        zoom={11}
+        minZoom={3.5}
+        maxZoom={18}
+        maxBounds={[[-85, -180], [85, 180]]}
+        maxBoundsViscosity={1.0}
+        worldCopyJump={false}
+        style={{ height: '66vh', width: '100%' }}
+      >
         <TileLayer
           attribution='&copy; OpenStreetMap contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

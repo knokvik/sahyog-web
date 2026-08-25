@@ -27,36 +27,41 @@ function MapClickHandler({ onMapClick, drawing }) {
 }
 
 function ZoomDisplay() {
-  const [zoom, setZoom] = useState(11);
   const map = useMapEvents({
     zoomend: () => {
       setZoom(map.getZoom());
     },
   });
+  const [zoom, setZoom] = useState(() => map.getZoom() || 11);
 
-  const maxZoom = map.getMaxZoom() || 18;
-  const zoomPercent = Math.round((zoom / maxZoom) * 100);
+  const minZ = map.getMinZoom() || 3;
+  const maxZ = map.getMaxZoom() || 18;
+  const zoomPercent = Math.min(100, Math.max(10, Math.round(((zoom - minZ) / (maxZ - minZ)) * 90 + 10)));
 
   return (
     <div style={{
       position: 'absolute',
-      bottom: '16px',
-      left: '16px',
+      bottom: '24px',
+      left: '24px',
       zIndex: 1000,
-      background: 'var(--color-surface)',
-      padding: '6px 12px',
-      borderRadius: '20px',
-      boxShadow: 'var(--shadow-md)',
-      border: '1px solid var(--color-border)',
-      fontSize: '11px',
-      fontWeight: '600',
-      color: 'var(--color-text-primary)',
+      background: 'var(--color-surface, #ffffff)',
+      padding: '6px 14px',
+      borderRadius: '24px',
+      boxShadow: '0 4px 14px rgba(0,0,0,0.12)',
+      border: '1px solid var(--color-border, #e2e8f0)',
+      fontSize: '12px',
+      fontWeight: '700',
+      color: 'var(--color-text-primary, #0f172a)',
       display: 'flex',
       alignItems: 'center',
-      gap: '8px'
+      gap: '8px',
+      backdropFilter: 'blur(8px)',
+      userSelect: 'none'
     }}>
-      <span className="material-symbols-outlined" style={{ fontSize: '14px', color: 'var(--color-primary)' }}>zoom_in</span>
-      {zoomPercent >= 100 ? '100% ZOOM' : `${zoomPercent}% ZOOM`}
+      <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--color-primary, #34b27b)' }}>explore</span>
+      <span>{zoomPercent}% ZOOM</span>
+      <span style={{ color: 'var(--color-border, #cbd5e1)', margin: '0 2px' }}>|</span>
+      <span style={{ fontSize: '11px', color: 'var(--color-text-muted, #64748b)', fontWeight: 600 }}>Lvl {Math.round(zoom)}</span>
     </div>
   );
 }
@@ -113,7 +118,16 @@ function ZoneMapTab({ disasterId, onOpenModal }) {
 
       {/* Map */}
       <div style={{ height: '100%', width: '100%' }}>
-        <MapContainer center={[19.076, 72.877]} zoom={11} style={{ height: '100%', width: '100%', zIndex: 1, position: 'absolute' }}>
+        <MapContainer
+          center={[19.076, 72.877]}
+          zoom={11}
+          minZoom={3.5}
+          maxZoom={18}
+          maxBounds={[[-85, -180], [85, 180]]}
+          maxBoundsViscosity={1.0}
+          worldCopyJump={false}
+          style={{ height: '100%', width: '100%', zIndex: 1, position: 'absolute' }}
+        >
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; OpenStreetMap'
@@ -579,7 +593,7 @@ export function ReliefCoordination() {
   }, [activeDisasters, selectedDisaster]);
 
   return (
-    <div style={{ margin: '-24px', position: 'relative', height: 'calc(100vh - 61px)', width: 'calc(100% + 48px)', display: 'flex', flexDirection: 'column', background: 'var(--color-bg)', overflow: 'hidden' }}>
+    <div style={{ position: 'relative', height: '100%', minHeight: 'calc(100vh - 105px)', width: '100%', display: 'flex', flexDirection: 'column', background: 'var(--color-bg)', overflow: 'hidden' }}>
 
       {/* Top Floating Bar for Disaster Selection */}
       <div style={{

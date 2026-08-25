@@ -54,6 +54,32 @@ export function ZoneCard({ zone, onClick }) {
         <span className={styles.statLabel}>Avg Response Time</span>
         <span className={styles.statValue}>{zone.avg_response_time_minutes ?? zone.avg_response_time ?? 0} min</span>
       </div>
+
+      <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
+        <button
+          type="button"
+          className={styles.button}
+          style={{
+            fontSize: '11px',
+            fontWeight: '700',
+            padding: '5px 12px',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            background: 'var(--color-surface, #ffffff)',
+            color: 'var(--color-primary, #34b27b)',
+            border: '1px solid var(--color-border, #e2e8f0)'
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick?.();
+          }}
+        >
+          <span>Open Zone</span>
+          <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>arrow_forward</span>
+        </button>
+      </div>
     </article>
   );
 }

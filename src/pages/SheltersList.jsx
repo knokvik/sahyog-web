@@ -38,7 +38,7 @@ export function SheltersList() {
   };
 
   if (isLoading) return <div className={styles.loading}>Loading shelters…</div>;
-  if (error) return <div className={styles.error}>⚠️ Error: {error.message}</div>;
+  if (error) return <div className={styles.error}>Error: {error.message}</div>;
 
   const rows = Array.isArray(list) ? list : [];
 

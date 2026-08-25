@@ -11,23 +11,36 @@ import { NotificationsPanel } from './NotificationsPanel';
 import BrandIcon from '../assets/favicon.svg';
 import styles from './Layout.module.css';
 
-const navItems = [
-  { to: '/', label: 'Home', icon: 'home', highlight: true },
-  { to: '/orchestrator', label: 'Orchestrator', icon: 'cell_tower', highlight: true },
-  { to: '/dashboard', label: 'Dashboard', icon: 'dashboard', highlight: true },
-  { to: '/zones', label: 'Zone Control', icon: 'hub', highlight: true },
-  { to: '/escalations', label: 'Escalations', icon: 'priority_high', highlight: true },
-  { to: '/map', label: 'Deployment Map', icon: 'map', highlight: true },
-  { to: '/coordinators', label: 'Coordinators', icon: 'insights' },
-  { to: '/reports', label: 'Reports', icon: 'summarize' },
-  { to: '/needs', label: 'Needs / SOS', icon: 'sos' },
-  { to: '/disasters', label: 'Disaster Zones', icon: 'flood' },
-  { to: '/relief', label: 'Relief Coordination', icon: 'volunteer_activism' },
-  { to: '/resources', label: 'Resources', icon: 'inventory_2' },
-  { to: '/missing', label: 'Missing Persons', icon: 'person_search' },
-  { to: '/users', label: 'User Management', icon: 'admin_panel_settings' },
-  { to: '/server', label: 'Server Monitor', icon: 'monitor_heart' },
-  { to: '/live-map', label: 'Legacy Live Map', icon: 'radar' },
+const navSections = [
+  {
+    title: 'COMMAND CENTER',
+    items: [
+      { to: '/', label: 'Home', icon: 'home' },
+      { to: '/orchestrator', label: 'Orchestrator', icon: 'cell_tower' },
+      { to: '/zones', label: 'Zone Control', icon: 'hub' },
+      { to: '/escalations', label: 'Escalations', icon: 'priority_high' },
+      { to: '/map', label: 'Deployment Map', icon: 'map' },
+    ]
+  },
+  {
+    title: 'OPERATIONS & RELIEF',
+    items: [
+      { to: '/needs', label: 'Needs / SOS', icon: 'sos' },
+      { to: '/disasters', label: 'Disaster Zones', icon: 'flood' },
+      { to: '/relief', label: 'Relief Coordination', icon: 'volunteer_activism' },
+      { to: '/resources', label: 'Resources', icon: 'inventory_2' },
+      { to: '/missing', label: 'Missing Persons', icon: 'person_search' },
+      { to: '/coordinators', label: 'Coordinators', icon: 'insights' },
+      { to: '/reports', label: 'Reports', icon: 'summarize' },
+    ]
+  },
+  {
+    title: 'SYSTEM & ADMIN',
+    items: [
+      { to: '/users', label: 'User Management', icon: 'admin_panel_settings' },
+      { to: '/server', label: 'Server Monitor', icon: 'monitor_heart' },
+    ]
+  }
 ];
 
 export function Layout() {
@@ -95,23 +108,27 @@ export function Layout() {
 
         {/* Nav */}
         <nav className={styles.nav}>
-          {sidebarOpen && <span className={styles.navLabel}>NAVIGATION</span>}
-          {navItems.map(({ to, label, icon, highlight }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                `${styles.navLink} ${isActive ? styles.navLinkActive : ''} ${highlight ? styles.navHighlight : ''}`
-              }
-              end={to === '/'}
-              title={label}
-            >
-              <span className={`material-symbols-outlined ${styles.navIcon}`}>{icon}</span>
-              {sidebarOpen && <span className={styles.navText}>{label}</span>}
-              {highlight && sidebarOpen && (
-                <span className={styles.navDot} />
+          {navSections.map((section, sIdx) => (
+            <div key={section.title} className={styles.navSection}>
+              {sidebarOpen && (
+                <span className={styles.navLabel}>{section.title}</span>
               )}
-            </NavLink>
+              {sIdx > 0 && !sidebarOpen && <div className={styles.navDividerCollapsed} />}
+              {section.items.map(({ to, label, icon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className={({ isActive }) =>
+                    `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
+                  }
+                  end={to === '/'}
+                  title={label}
+                >
+                  <span className={`material-symbols-outlined ${styles.navIcon}`}>{icon}</span>
+                  {sidebarOpen && <span className={styles.navText}>{label}</span>}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
 
@@ -216,22 +233,22 @@ export function Layout() {
           </div>
           <div className={styles.newsTickerContent}>
             <div className={styles.newsTickerTrack}>
-              <span>🚨 NDRF teams deployed to Sector 4 affected by flash floods.</span>
+              <span>NDRF teams deployed to Sector 4 affected by flash floods.</span>
               <span className={styles.tickerSeparator}>|</span>
-              <span>⚠️ Heavy rainfall alert issued for the coastal regions over the next 48 hours.</span>
+              <span>Heavy rainfall advisory issued for coastal regions over next 48 hours.</span>
               <span className={styles.tickerSeparator}>|</span>
-              <span>🚁 Medical supplies airdropped in remote areas.</span>
+              <span>Medical supplies airdropped in remote areas.</span>
               <span className={styles.tickerSeparator}>|</span>
-              <span>🟢 Communication mesh networking is fully active in rural offline zones.</span>
+              <span>Communication mesh networking active in rural offline zones.</span>
               {/* Duplicate for infinite scroll loop */}
               <span className={styles.tickerSeparator}>|</span>
-              <span>🚨 NDRF teams deployed to Sector 4 affected by flash floods.</span>
+              <span>NDRF teams deployed to Sector 4 affected by flash floods.</span>
               <span className={styles.tickerSeparator}>|</span>
-              <span>⚠️ Heavy rainfall alert issued for the coastal regions over the next 48 hours.</span>
+              <span>Heavy rainfall advisory issued for coastal regions over next 48 hours.</span>
               <span className={styles.tickerSeparator}>|</span>
-              <span>🚁 Medical supplies airdropped in remote areas.</span>
+              <span>Medical supplies airdropped in remote areas.</span>
               <span className={styles.tickerSeparator}>|</span>
-              <span>🟢 Communication mesh networking is fully active in rural offline zones.</span>
+              <span>Communication mesh networking active in rural offline zones.</span>
             </div>
           </div>
         </div>

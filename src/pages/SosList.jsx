@@ -5,7 +5,13 @@ import styles from './DataList.module.css';
 const filters = ['All', 'triggered', 'acknowledged', 'resolved'];
 
 function StatusBadge({ status }) {
-  return <span className={`${styles.badge} ${styles[`badge_${status}`] || styles.badge_muted}`}>{status?.replace('_', ' ')}</span>;
+  const map = {
+    resolved: 'found',
+    triggered: 'missing',
+    acknowledged: 'warning',
+  };
+  const variant = map[status] || status || 'muted';
+  return <span className={`${styles.badge} ${styles[`badge_${variant}`] || styles.badge_muted}`}>{status?.replace('_', ' ')}</span>;
 }
 
 function formatTime(dateStr) {
@@ -165,7 +171,7 @@ export function SosList() {
   };
 
   if (isLoading) return <div className={styles.loading}>Loading SOS alerts…</div>;
-  if (error) return <div className={styles.error}>⚠️ Error: {error.message}</div>;
+  if (error) return <div className={styles.error}>Error: {error.message}</div>;
 
   const allRows = Array.isArray(list) ? list : [];
   const rows = activeFilter === 'All' ? allRows : allRows.filter(r => r.status === activeFilter);
@@ -178,10 +184,10 @@ export function SosList() {
       <div className={styles.pageHeader}>
         <div className={styles.pageHeaderLeft}>
           <h1 className={styles.title}>
-            <span className="material-symbols-outlined" style={{ fontSize: 24, color: '#ef4444' }}>sos</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 24, color: '#34b27b' }}>sos</span>
             SOS Alerts
           </h1>
-          <p className={styles.subtitle}>{activeCount} active · {allRows.length} total</p>
+          <p className={styles.subtitle}>{activeCount} active · {allRows.length} total reports</p>
         </div>
       </div>
 
@@ -201,11 +207,11 @@ export function SosList() {
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>ID</th>
+              <th>Reporter / Incident</th>
               <th>Status</th>
               <th>Volunteer</th>
               <th>Disaster</th>
-              <th>Created</th>
+              <th>Reported</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -222,7 +228,17 @@ export function SosList() {
             ) : (
               rows.map(row => (
                 <tr key={row.id}>
-                  <td><code className={styles.idCode}>#{row.id?.slice(0, 8)}</code></td>
+                  <td style={{ fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 18, color: row.status === 'resolved' ? '#16a34a' : '#ef4444' }}>
+                        {row.status === 'resolved' ? 'check_circle' : 'warning'}
+                      </span>
+                      <span>
+                        {row.reporter_name || row.type || `Alert #${row.id?.slice(0, 8)}`}
+                        {row.phone && <span style={{ display: 'block', fontSize: '11px', color: 'var(--color-text-muted)', fontWeight: 500 }}>{row.phone}</span>}
+                      </span>
+                    </span>
+                  </td>
                   <td>
                     <StatusBadge status={row.status} />
                     {row.relayed_via_mesh && (
@@ -239,11 +255,11 @@ export function SosList() {
                         color: '#fff',
                         letterSpacing: '0.3px',
                       }}>
-                        📡 Mesh
+                        <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>cell_tower</span> Mesh
                       </span>
                     )}
                   </td>
-                  <td>{row.volunteer_name ?? '—'}</td>
+                  <td style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{row.volunteer_name ?? '—'}</td>
                   <td>{row.disaster_name ?? '—'}</td>
                   <td className={styles.timeCell}>{formatTime(row.created_at)}</td>
                   <td>

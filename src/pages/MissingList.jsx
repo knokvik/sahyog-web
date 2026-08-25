@@ -20,7 +20,7 @@ export function MissingList() {
   const [activeFilter, setActiveFilter] = useState('All');
 
   if (isLoading) return <div className={styles.loading}>Loading missing persons…</div>;
-  if (error) return <div className={styles.error}>⚠️ Error: {error.message}</div>;
+  if (error) return <div className={styles.error}>Error: {error.message}</div>;
 
   const allRows = Array.isArray(list) ? list : [];
   const rows = activeFilter === 'All' ? allRows : allRows.filter(r => r.status === activeFilter);

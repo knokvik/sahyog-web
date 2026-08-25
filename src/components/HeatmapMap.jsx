@@ -135,7 +135,16 @@ export function HeatmapMap({ viewMode = 'public', height = '66vh' }) {
 
   return (
     <div style={{ position: 'relative', width: '100%', height }}>
-      <MapContainer center={center} zoom={11} style={{ height: '100%', width: '100%', borderRadius: 16 }}>
+      <MapContainer
+        center={center}
+        zoom={11}
+        minZoom={3.5}
+        maxZoom={18}
+        maxBounds={[[-85, -180], [85, 180]]}
+        maxBoundsViscosity={1.0}
+        worldCopyJump={false}
+        style={{ height: '100%', width: '100%', borderRadius: 16 }}
+      >
         <TileLayer
           attribution='&copy; OpenStreetMap contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

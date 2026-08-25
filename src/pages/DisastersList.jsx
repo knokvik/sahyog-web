@@ -296,7 +296,7 @@ export function DisastersList() {
   const [expandedResolveId, setExpandedResolveId] = useState(null);
 
   if (isLoading) return <div className={styles.loading}>Loading disaster zones…</div>;
-  if (error) return <div className={styles.error}>⚠️ Error: {error.message}</div>;
+  if (error) return <div className={styles.error}>Error: {error.message}</div>;
 
   const allRows = Array.isArray(list) ? list : [];
   const rows = activeFilter === 'All' ? allRows : allRows.filter(r => r.status === activeFilter);

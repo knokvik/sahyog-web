@@ -15,7 +15,7 @@ export function VolunteersList() {
   const [activeFilter, setActiveFilter] = useState('All');
 
   if (isLoading) return <div className={styles.loading}>Loading volunteers…</div>;
-  if (error) return <div className={styles.error}>⚠️ Error: {error.message}</div>;
+  if (error) return <div className={styles.error}>Error: {error.message}</div>;
 
   const allRows = Array.isArray(list) ? list.filter(u => u.role === 'volunteer') : [];
 

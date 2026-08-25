@@ -38,7 +38,7 @@ import { CoordinatorAnalyticsPage } from './pages/command-center/CoordinatorAnal
 import { ReportsPage } from './pages/command-center/ReportsPage';
 
 
-const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || import.meta.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 if (!publishableKey) {
   console.warn('Missing VITE_CLERK_PUBLISHABLE_KEY. Set it in .env for Clerk auth.');
 }
@@ -106,13 +106,13 @@ function AppRoutes() {
       <Route
         path="/"
         element={
-          <ProtectedRoute allowedRoles={['admin']}>
+          <ProtectedRoute allowedRoles={['admin', 'coordinator', 'volunteer', 'user']}>
             <Layout />
           </ProtectedRoute>
         }
       >
         <Route index element={<Dashboard />} />
-        <Route path="dashboard" element={<CommandDashboard />} />
+        <Route path="dashboard" element={<Navigate to="/zones" replace />} />
         <Route path="orchestrator" element={<UnifiedOrchestratorDashboard />} />
         <Route path="zones" element={<ZonesPage />} />
         <Route path="zones/:id" element={<ZoneDetailsPage />} />
@@ -130,7 +130,7 @@ function AppRoutes() {
         <Route path="users" element={<UsersList />} />
         <Route path="relief" element={<ReliefCoordination />} />
         <Route path="map" element={<DeploymentMapPage />} />
-        <Route path="live-map" element={<LiveMap />} />
+        <Route path="live-map" element={<Navigate to="/map" replace />} />
         <Route path="server" element={<ServerMonitor />} />
       </Route>
 
@@ -138,7 +138,7 @@ function AppRoutes() {
       <Route
         path="/org-onboarding"
         element={
-          <ProtectedRoute allowedRoles={['volunteer', 'organization', 'admin', 'coordinator']}>
+          <ProtectedRoute allowedRoles={['volunteer', 'organization', 'admin', 'coordinator', 'user']}>
             <OrgOnboarding />
           </ProtectedRoute>
         }
