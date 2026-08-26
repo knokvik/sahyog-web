@@ -28,6 +28,7 @@ const navSections = [
       { to: '/needs', label: 'Needs / SOS', icon: 'sos' },
       { to: '/disasters', label: 'Disaster Zones', icon: 'flood' },
       { to: '/relief', label: 'Relief Coordination', icon: 'volunteer_activism' },
+      { to: '/org', label: 'Org Portal', icon: 'apartment' },
       { to: '/resources', label: 'Resources', icon: 'inventory_2' },
       { to: '/missing', label: 'Missing Persons', icon: 'person_search' },
       { to: '/coordinators', label: 'Coordinators', icon: 'insights' },

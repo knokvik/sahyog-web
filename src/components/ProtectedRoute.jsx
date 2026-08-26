@@ -31,68 +31,9 @@ function RoleGate({ children, allowedRoles }) {
   const role = me?.role;
   const loginIntent = typeof window !== 'undefined' ? localStorage.getItem('loginIntent') : null;
 
-  // ─── Mismatch Detection ───────────────────────────────────────
-  // Admin user logged in via Organization toggle
-  if (role === 'admin' && loginIntent === 'org') {
-    return (
-      <div style={gateStyles.center}>
-        <span className="material-symbols-outlined" style={{ fontSize: 56, color: '#f59e0b' }}>swap_horiz</span>
-        <h2 style={gateStyles.title}>Wrong Portal</h2>
-        <p style={gateStyles.desc}>
-          This email is already registered as an <strong>Admin / Coordinator</strong> account.
-          You cannot use it to access the Organization portal.
-        </p>
-        <p style={gateStyles.hint}>
-          Please use a different email to register as an Organization, or switch to the Admin login.
-        </p>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button
-            style={{ ...gateStyles.btn, background: '#34b27b' }}
-            onClick={() => { localStorage.setItem('loginIntent', 'admin'); navigate('/'); }}
-          >
-            Go to Admin Panel
-          </button>
-          <button
-            style={{ ...gateStyles.btn, background: '#64748b' }}
-            onClick={() => { localStorage.removeItem('loginIntent'); signOut(); }}
-          >
-            Sign Out &amp; Use Another Email
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Organization user logged in via Admin toggle
-  if (role === 'organization' && loginIntent === 'admin') {
-    return (
-      <div style={gateStyles.center}>
-        <span className="material-symbols-outlined" style={{ fontSize: 56, color: '#f59e0b' }}>swap_horiz</span>
-        <h2 style={gateStyles.title}>Wrong Portal</h2>
-        <p style={gateStyles.desc}>
-          This email is already registered as an <strong>Organization</strong> account.
-          You cannot use it to access the Admin portal.
-        </p>
-        <p style={gateStyles.hint}>
-          Please use a different email to login as Admin, or switch to the Organization login.
-        </p>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button
-            style={{ ...gateStyles.btn, background: '#3b82f6' }}
-            onClick={() => { localStorage.setItem('loginIntent', 'org'); navigate(me?.organization_id ? '/org' : '/org-onboarding'); }}
-          >
-            Go to Organization Panel
-          </button>
-          <button
-            style={{ ...gateStyles.btn, background: '#64748b' }}
-            onClick={() => { localStorage.removeItem('loginIntent'); signOut(); }}
-          >
-            Sign Out &amp; Use Another Email
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // ─── Intent / Role Handling ──────────────────────────────────
+  // If user is organization role and trying to access an org-only route, allow them.
+  // If user is accessing main portal with 'organization' role, allow them if allowedRoles includes 'organization'.
 
   // ─── Normal role-based routing ────────────────────────────────
   // Organization role → redirect to org panel (or onboarding)

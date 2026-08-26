@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, Tooltip, CircleMarker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet.heat';
@@ -270,6 +270,7 @@ function LiveHeatLayer({ points }) {
 }
 
 export function LiveMap() {
+    const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const queryLat = asNumber(searchParams.get('lat'));
     const queryLng = asNumber(searchParams.get('lng'));
@@ -540,7 +541,7 @@ export function LiveMap() {
                                                 justifyContent: 'center',
                                                 gap: '4px'
                                             }}
-                                            onClick={() => window.location.href = `/sos`}
+                                            onClick={() => navigate('/sos')}
                                         >
                                             <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>list_alt</span>
                                             Manage
