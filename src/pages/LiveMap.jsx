@@ -17,6 +17,37 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+function isValidCoord(lat, lng) {
+    if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) return false;
+    // Filter out (0,0) Null Island / Ocean coordinates
+    if (Math.abs(lat) < 0.1 && Math.abs(lng) < 0.1) return false;
+    return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+}
+
+function extractAlertCoords(alert) {
+    if (!alert) return null;
+    let lat = asNumber(alert.lat);
+    let lng = asNumber(alert.lng);
+
+    if (lat === null || lng === null) {
+        if (alert.location) {
+            if (Array.isArray(alert.location.coordinates) && alert.location.coordinates.length >= 2) {
+                // PostGIS / GeoJSON format is [longitude, latitude]
+                lng = asNumber(alert.location.coordinates[0]);
+                lat = asNumber(alert.location.coordinates[1]);
+            } else if (alert.location.lat != null && alert.location.lng != null) {
+                lat = asNumber(alert.location.lat);
+                lng = asNumber(alert.location.lng);
+            }
+        }
+    }
+
+    if (isValidCoord(lat, lng)) {
+        return { lat, lng };
+    }
+    return null;
+}
+
 function MapRecenter({ target }) {
     const map = useMap();
     const lastTargetRef = useRef(null);
@@ -27,7 +58,7 @@ function MapRecenter({ target }) {
     }, [map]);
 
     useEffect(() => {
-        if (target && target.lat != null && target.lng != null) {
+        if (target && isValidCoord(target.lat, target.lng)) {
             const key = `${Number(target.lat).toFixed(4)}_${Number(target.lng).toFixed(4)}_${target.zoom || 15}`;
             if (lastTargetRef.current !== key) {
                 const isFirst = lastTargetRef.current === null;
@@ -249,7 +280,7 @@ export function LiveMap() {
     const [shelters, setShelters] = useState([]);
     const [heatmapUpdatedAt, setHeatmapUpdatedAt] = useState(null);
     const [targetLocation, setTargetLocation] = useState(() => {
-        if (queryLat !== null && queryLng !== null) {
+        if (isValidCoord(queryLat, queryLng)) {
             return { lat: queryLat, lng: queryLng, zoom: 15 };
         }
         return null;
@@ -258,7 +289,7 @@ export function LiveMap() {
     const { getToken, isLoaded, isSignedIn } = useAuth();
 
     useEffect(() => {
-        if (queryLat !== null && queryLng !== null) {
+        if (isValidCoord(queryLat, queryLng)) {
             setTargetLocation({ lat: queryLat, lng: queryLng, zoom: 15 });
         }
     }, [queryLat, queryLng]);
@@ -278,15 +309,20 @@ export function LiveMap() {
                     });
                     setAlerts(activeAlerts);
 
-                    // Default map to latest active SOS coordinate if no query param was provided
-                    if (queryLat === null || queryLng === null) {
-                        const list = Object.values(activeAlerts);
-                        if (list.length > 0) {
-                            const latest = list[0];
-                            const lat = asNumber(latest.lat ?? latest.location?.coordinates?.[1]);
-                            const lng = asNumber(latest.lng ?? latest.location?.coordinates?.[0]);
-                            if (lat !== null && lng !== null) {
-                                setTargetLocation({ lat, lng, zoom: 15 });
+                    // Default map to the latest active SOS coordinate (newest first, sorted by created_at)
+                    if (!isValidCoord(queryLat, queryLng)) {
+                        const sorted = Object.values(activeAlerts).sort((a, b) => {
+                            const timeA = new Date(a.created_at || 0).getTime();
+                            const timeB = new Date(b.created_at || 0).getTime();
+                            return timeB - timeA;
+                        });
+
+                        for (const alert of sorted) {
+                            const coords = extractAlertCoords(alert);
+                            if (coords) {
+                                console.log('Centering map on latest SOS alert:', alert.id, coords);
+                                setTargetLocation({ lat: coords.lat, lng: coords.lng, zoom: 15 });
+                                break;
                             }
                         }
                     }
@@ -300,7 +336,7 @@ export function LiveMap() {
                 if (Array.isArray(data)) {
                     const liveResponders = {};
                     data.forEach(user => {
-                        if ((user.role === 'volunteer' || user.role === 'coordinator') && user.lat && user.lng) {
+                        if ((user.role === 'volunteer' || user.role === 'coordinator') && isValidCoord(asNumber(user.lat), asNumber(user.lng))) {
                             liveResponders[user.id] = user;
                         }
                     });
@@ -320,10 +356,9 @@ export function LiveMap() {
             setAlerts(prev => ({ ...prev, [data.id]: data }));
 
             // Smoothly focus map on incoming emergency without bouncing back
-            const lat = asNumber(data.lat ?? data.location?.coordinates?.[1]);
-            const lng = asNumber(data.lng ?? data.location?.coordinates?.[0]);
-            if (lat !== null && lng !== null) {
-                setTargetLocation({ lat, lng, zoom: 15 });
+            const coords = extractAlertCoords(data);
+            if (coords) {
+                setTargetLocation({ lat: coords.lat, lng: coords.lng, zoom: 15 });
             }
         });
 
@@ -398,7 +433,7 @@ export function LiveMap() {
             overflow: 'hidden'
         }}>
             <MapContainer
-                center={targetLocation ? [targetLocation.lat, targetLocation.lng] : [18.5204, 73.8567]}
+                center={targetLocation && isValidCoord(targetLocation.lat, targetLocation.lng) ? [targetLocation.lat, targetLocation.lng] : [18.5204, 73.8567]}
                 zoom={targetLocation ? (targetLocation.zoom || 15) : 11}
                 minZoom={3.5}
                 maxZoom={18}
@@ -464,10 +499,9 @@ export function LiveMap() {
 
                 {/* SOS Alerts */}
                 {alertList.map(alert => {
-                    const lat = alert.lat || (alert.location?.coordinates ? alert.location.coordinates[1] : null);
-                    const lng = alert.lng || (alert.location?.coordinates ? alert.location.coordinates[0] : null);
-
-                    if (!lat || !lng) return null;
+                    const coords = extractAlertCoords(alert);
+                    if (!coords) return null;
+                    const { lat, lng } = coords;
 
                     const lastActive = alert.last_active ? new Date(alert.last_active).getTime() : 0;
                     const isLive = (Date.now() - lastActive) < 60000;
