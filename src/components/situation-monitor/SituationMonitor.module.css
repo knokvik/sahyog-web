@@ -439,21 +439,21 @@
   flex-shrink: 0;
 }
 
-/* Map Legend */
+/* Map Legend & Chips */
 .mapLegend {
   position: absolute;
-  bottom: 12px;
+  bottom: 14px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 6px 16px;
+  gap: 12px;
+  padding: 6px 14px;
   background: var(--color-surface);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
   border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
   border-radius: var(--radius-full);
   font-size: 11px;
   color: var(--color-text-secondary);
@@ -465,18 +465,43 @@
   display: flex;
   align-items: center;
   gap: 5px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+}
+
+.legendItem strong {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .legendDot {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
+}
+
+.mapTopRightPill {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-surface);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-full);
+  padding: 4px 12px;
 }
 
 /* ── 3-Deck Grid (Individual Cards) ── */
 .deckGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1.2fr;
+  grid-template-columns: 1fr 1fr 1.3fr;
   gap: 16px;
 }
 
@@ -721,7 +746,7 @@
 
 /* ── News Deck ── */
 .newsPlayer {
-  height: 130px;
+  height: 210px;
   background: var(--color-bg);
   border-radius: var(--radius-lg);
   display: flex;

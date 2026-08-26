@@ -321,54 +321,7 @@ export function SituationMonitor() {
 
   return (
     <div className={styles.situationSection}>
-      {/* ── Telemetry Bar ── */}
-      <div className={styles.telemetryBar}>
-        <div className={styles.telemetryLeft}>
-          <div className={styles.brandMark}>
-            <span className={`material-symbols-outlined ${styles.brandIcon}`}>radar</span>
-            SITUATION COMMAND
-          </div>
-          <div className={styles.liveBadge}>
-            <span className={styles.livePulse} />
-            LIVE
-          </div>
-        </div>
-
-        <div className={styles.telemetryCenter}>
-          <div className={`${styles.threatBadge} ${threat.cls}`}>
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{threat.icon}</span>
-            {threat.label}
-          </div>
-          <div className={styles.metricPills}>
-            <div className={`${styles.metricPill} ${styles.metricRed}`}>
-              <span className={`material-symbols-outlined ${styles.pillIcon}`}>sos</span>
-              <span className={styles.val}>{activeSos.length}</span>
-              SOS
-            </div>
-            <div className={`${styles.metricPill} ${styles.metricAmber}`}>
-              <span className={`material-symbols-outlined ${styles.pillIcon}`}>flood</span>
-              <span className={styles.val}>{activeDisasters.length}</span>
-              ZONES
-            </div>
-            <div className={`${styles.metricPill} ${styles.metricBlue}`}>
-              <span className={`material-symbols-outlined ${styles.pillIcon}`}>group</span>
-              <span className={styles.val}>{volunteers.length}</span>
-              VOL
-            </div>
-            <div className={`${styles.metricPill} ${styles.metricGreen}`}>
-              <span className={`material-symbols-outlined ${styles.pillIcon}`}>inventory_2</span>
-              <span className={styles.val}>{resArr.length}</span>
-              RES
-            </div>
-          </div>
-        </div>
-
-        <div className={styles.telemetryRight}>
-          <LiveClock />
-        </div>
-      </div>
-
-      {/* ── Central Tactical Map ── */}
+      {/* ── Central Tactical Map with Live Telemetry Chips ── */}
       <div className={styles.mapCard}>
         <MapContainer
           center={[20.5937, 78.9629]}
@@ -433,6 +386,15 @@ export function SituationMonitor() {
           ))}
         </MapContainer>
 
+        {/* Top-Right Live Threat & Clock Overlay */}
+        <div className={styles.mapTopRightPill}>
+          <div className={`${styles.threatBadge} ${threat.cls}`} style={{ padding: '2px 8px', fontSize: 9 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 12 }}>{threat.icon}</span>
+            {threat.label}
+          </div>
+          <LiveClock />
+        </div>
+
         {/* Layer Panel */}
         {layersOpen ? (
           <div className={styles.layerPanel}>
@@ -483,12 +445,24 @@ export function SituationMonitor() {
           </button>
         )}
 
-        {/* Legend */}
+        {/* Live Legend Chips with Live Counts */}
         <div className={styles.mapLegend}>
-          <span className={styles.legendItem}><span className={styles.legendDot} style={{ background: '#ef4444' }} /> SOS Alert</span>
-          <span className={styles.legendItem}><span className={styles.legendDot} style={{ background: '#f59e0b' }} /> Danger Zone</span>
-          <span className={styles.legendItem}><span className={styles.legendDot} style={{ background: '#34b27b' }} /> Supply Hub</span>
-          <span className={styles.legendItem}><span className={styles.legendDot} style={{ background: '#3b82f6' }} /> Volunteer</span>
+          <span className={styles.legendItem}>
+            <span className={styles.legendDot} style={{ background: '#ef4444', boxShadow: '0 0 6px rgba(239,68,68,0.8)' }} />
+            SOS: <strong style={{ color: 'var(--color-danger)' }}>{activeSos.length}</strong>
+          </span>
+          <span className={styles.legendItem}>
+            <span className={styles.legendDot} style={{ background: '#f59e0b', boxShadow: '0 0 6px rgba(245,158,11,0.8)' }} />
+            Zones: <strong style={{ color: 'var(--color-warning)' }}>{activeDisasters.length}</strong>
+          </span>
+          <span className={styles.legendItem}>
+            <span className={styles.legendDot} style={{ background: '#34b27b', boxShadow: '0 0 6px rgba(52,178,123,0.8)' }} />
+            Supplies: <strong style={{ color: 'var(--color-primary)' }}>{resArr.length}</strong>
+          </span>
+          <span className={styles.legendItem}>
+            <span className={styles.legendDot} style={{ background: '#3b82f6', boxShadow: '0 0 6px rgba(59,130,246,0.8)' }} />
+            Volunteers: <strong style={{ color: 'var(--color-info)' }}>{volunteers.length}</strong>
+          </span>
         </div>
       </div>
 
