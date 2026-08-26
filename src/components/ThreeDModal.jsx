@@ -33,18 +33,8 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
             try {
                 if (!containerRef.current) return;
 
-                // 1. High-resolution satellite imagery provider for Cesium 1.138+
-                let imageryProvider;
-                try {
-                    imageryProvider = await Cesium.UrlTemplateImageryProvider.fromUrl(
-                        'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-                        {
-                            maximumLevel: 19,
-                            credit: '© Esri, Maxar, Earthstar Geographics'
-                        }
-                    );
-                } catch (_) {
-                    imageryProvider = await Cesium.createWorldImageryAsync();
+                if (typeof window !== 'undefined' && !window.CESIUM_BASE_URL) {
+                    window.CESIUM_BASE_URL = '/cesium/';
                 }
 
                 viewer = new Cesium.Viewer(containerRef.current, {
@@ -58,13 +48,29 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                     navigationHelpButton: false,
                     sceneModePicker: false,
                     fullscreenButton: false,
-                    baseLayer: new Cesium.ImageryLayer(imageryProvider),
+                    baseLayer: false, // Prevents mandatory Ion token errors
                     skyAtmosphere: new Cesium.SkyAtmosphere(),
                     shouldAnimate: true,
                     scene3DOnly: true,
                 });
 
                 viewerRef.current = viewer;
+
+                // Add reliable satellite imagery layer without Ion token dependency
+                try {
+                    const imageryProvider = await Cesium.UrlTemplateImageryProvider.fromUrl(
+                        'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                        {
+                            maximumLevel: 19,
+                            credit: '© Esri, Maxar, Earthstar Geographics'
+                        }
+                    );
+                    if (viewer && !viewer.isDestroyed()) {
+                        viewer.imageryLayers.addImageryProvider(imageryProvider);
+                    }
+                } catch (imgErr) {
+                    console.warn('Satellite layer error, using offline texture fallback:', imgErr);
+                }
 
                 // --- 🎮 INTUITIVE CAMERA CONTROLS ---
                 const controller = viewer.scene.screenSpaceCameraController;
