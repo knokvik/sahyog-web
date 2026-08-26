@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSelector } from 'react-redux';
 import { useAuth } from '@clerk/clerk-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest, apiPaths } from '../../lib/api';
+import { selectTheme } from '../../store/slices/uiSlice';
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import styles from './SituationMonitor.module.css';
@@ -14,9 +16,10 @@ function LiveClock() {
     return () => clearInterval(t);
   }, []);
   const utc = now.toUTCString().replace('GMT', 'UTC');
+  const ist = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   return (
-    <span className={styles.clockDisplay}>
-      <span className={styles.clockUtc}>{utc}</span>
+    <span className={styles.clockDisplay} title={`UTC: ${utc} | IST: ${ist}`}>
+      <span className={styles.clockUtc}>{ist} IST</span>
     </span>
   );
 }
@@ -64,26 +67,26 @@ function parseLoc(item) {
 
 // ── NEWS DATA ──
 const NEWS_CHANNELS = [
-  { id: 'ndtv', name: 'NDTV', ytId: 'KMyBHJUDB_I' },
-  { id: 'ddnews', name: 'DD NEWS', ytId: 'sLBMgJE3VPM' },
-  { id: 'skynews', name: 'SKYNEWS', ytId: '9Auq9mYxFEE' },
-  { id: 'aljazeera', name: 'ALJAZEERA', ytId: 'bNyUyrR0PHo' },
-  { id: 'imd', name: 'IMD', ytId: null },
-  { id: 'reuters', name: 'REUTERS', ytId: null },
+  { id: 'ddnews', name: 'DD NEWS', ytId: 'sLBMgJE3VPM', url: 'https://www.youtube.com/watch?v=sLBMgJE3VPM' },
+  { id: 'skynews', name: 'SKY NEWS', ytId: '9Auq9mYxFEE', url: 'https://www.youtube.com/watch?v=9Auq9mYxFEE' },
+  { id: 'aljazeera', name: 'AL JAZEERA', ytId: 'bNyUyrR0PHo', url: 'https://www.youtube.com/watch?v=bNyUyrR0PHo' },
+  { id: 'aajtak', name: 'AAJ TAK', ytId: 'f0xP4_2K8g4', url: 'https://www.youtube.com/watch?v=f0xP4_2K8g4' },
+  { id: 'imd', name: 'IMD RADAR', type: 'weather', url: 'https://mausam.imd.gov.in/' },
 ];
 
 // ── LAYER CONFIG ──
 const LAYERS = [
-  { id: 'sos', label: 'SOS HOTSPOTS', color: '#f87171', icon: 'sos' },
-  { id: 'zones', label: 'RELIEF ZONES', color: '#fbbf24', icon: 'shield' },
-  { id: 'resources', label: 'SUPPLY HUBS', color: '#3ecf8e', icon: 'inventory_2' },
-  { id: 'volunteers', label: 'VOLUNTEERS', color: '#60a5fa', icon: 'group' },
-  { id: 'medical', label: 'MEDICAL', color: '#c084fc', icon: 'local_hospital' },
+  { id: 'sos', label: 'SOS HOTSPOTS', color: '#ef4444', icon: 'sos' },
+  { id: 'zones', label: 'RELIEF ZONES', color: '#f59e0b', icon: 'shield' },
+  { id: 'resources', label: 'SUPPLY HUBS', color: '#34b27b', icon: 'inventory_2' },
+  { id: 'volunteers', label: 'VOLUNTEERS', color: '#3b82f6', icon: 'group' },
+  { id: 'medical', label: 'MEDICAL', color: '#8b5cf6', icon: 'local_hospital' },
 ];
 
 // ── MAIN COMPONENT ──
 export function SituationMonitor() {
   const { getToken, isSignedIn } = useAuth();
+  const theme = useSelector(selectTheme);
 
   // Fetch live data
   const { data: sosRaw } = useQuery({
@@ -125,27 +128,27 @@ export function SituationMonitor() {
   // ── Map markers ──
   const [layers, setLayers] = useState({ sos: true, zones: true, resources: true, volunteers: false, medical: false });
   const toggleLayer = (id) => setLayers(prev => ({ ...prev, [id]: !prev[id] }));
-  const [layersOpen, setLayersOpen] = useState(true);
+  const [layersOpen, setLayersOpen] = useState(false);
 
   const mapMarkers = useMemo(() => {
     const markers = [];
     if (layers.sos) {
       sosArr.forEach(s => {
         const loc = parseLoc(s);
-        if (loc) markers.push({ ...loc, type: 'sos', id: s.id, label: s.type || 'SOS', status: s.status, time: s.created_at });
+        if (loc) markers.push({ ...loc, type: 'sos', id: s.id, label: s.type || 'SOS Alert', status: s.status, time: s.created_at });
       });
     }
     if (layers.resources) {
       resArr.forEach(r => {
         const loc = parseLoc(r);
-        if (loc) markers.push({ ...loc, type: 'resource', id: r.id, label: r.type || 'Resource', status: r.status, time: r.created_at });
+        if (loc) markers.push({ ...loc, type: 'resource', id: r.id, label: r.type || 'Resource Hub', status: r.status, time: r.created_at });
       });
     }
     return markers;
   }, [sosArr, resArr, layers]);
 
   // ── News ──
-  const [activeChannel, setActiveChannel] = useState('ndtv');
+  const [activeChannel, setActiveChannel] = useState('ddnews');
   const currentChannel = NEWS_CHANNELS.find(c => c.id === activeChannel);
 
   // ── AI brief ──
@@ -157,15 +160,15 @@ export function SituationMonitor() {
       if (types.length > 0) lines.push(`Types: ${types.join(', ')}.`);
     }
     if (activeDisasters.length > 0) {
-      lines.push(`${activeDisasters.length} active disaster${activeDisasters.length > 1 ? 's' : ''} being monitored.`);
+      lines.push(`${activeDisasters.length} active disaster${activeDisasters.length > 1 ? 's' : ''} being monitored in real time.`);
     }
     if (resArr.length > 0) {
-      lines.push(`${resArr.length} resource${resArr.length > 1 ? 's' : ''} deployed in the field.`);
+      lines.push(`${resArr.length} resource hubs deployed in the field.`);
     }
     if (volunteers.length > 0) {
-      lines.push(`${volunteers.length} volunteer${volunteers.length > 1 ? 's' : ''} registered for deployment.`);
+      lines.push(`${volunteers.length} registered volunteers ready for dispatch.`);
     }
-    if (lines.length === 0) lines.push('All systems nominal. No active incidents detected.');
+    if (lines.length === 0) lines.push('All monitored sectors nominal. Zero active emergency alerts.');
     return lines.join(' ');
   }, [activeSos, activeDisasters, resArr, volunteers]);
 
@@ -173,10 +176,10 @@ export function SituationMonitor() {
   const incidentFeed = useMemo(() => {
     const items = [];
     sosArr.slice(0, 8).forEach(s => {
-      items.push({ id: s.id, type: 'sos', title: `SOS: ${s.type || 'Emergency'}`, status: s.status, time: s.created_at, desc: s.description });
+      items.push({ id: s.id, type: 'sos', title: `SOS: ${s.type || 'Emergency Distress'}`, status: s.status, time: s.created_at, desc: s.description });
     });
     disArr.slice(0, 4).forEach(d => {
-      items.push({ id: d.id, type: 'disaster', title: `Disaster: ${d.name || d.type || 'Unknown'}`, status: d.status, time: d.created_at });
+      items.push({ id: d.id, type: 'disaster', title: `Zone: ${d.name || d.type || 'Active Hazard'}`, status: d.status, time: d.created_at });
     });
     items.sort((a, b) => new Date(b.time) - new Date(a.time));
     return items.slice(0, 10);
@@ -186,16 +189,21 @@ export function SituationMonitor() {
   const newsTicker = useMemo(() => {
     const headlines = [];
     activeSos.slice(0, 3).forEach(s => {
-      headlines.push({ breaking: true, text: `Emergency ${s.type || 'SOS'} signal detected — Priority ${s.priority_score || 'high'}` });
+      headlines.push({ breaking: true, text: `Emergency distress reported: ${s.type || 'SOS'} — Priority rating ${s.priority_score || 'High'}` });
     });
     activeDisasters.slice(0, 2).forEach(d => {
-      headlines.push({ breaking: true, text: `Active disaster zone: ${d.name || d.type} — Status: ${d.status}` });
+      headlines.push({ breaking: true, text: `Active disaster sector: ${d.name || d.type} — Status: ${d.status}` });
     });
     if (headlines.length === 0) {
-      headlines.push({ breaking: false, text: 'No active emergency alerts at this time. Monitoring all channels.' });
+      headlines.push({ breaking: false, text: 'National Emergency Network active. Monitoring IMD weather, mesh relays, and citizen telemetry.' });
     }
     return headlines;
   }, [activeSos, activeDisasters]);
+
+  // Dynamic map tile layer depending on light vs dark theme
+  const mapTileUrl = theme === 'dark'
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
   return (
     <div className={styles.console}>
@@ -204,9 +212,8 @@ export function SituationMonitor() {
         <div className={styles.telemetryLeft}>
           <div className={styles.brandMark}>
             <span className={`material-symbols-outlined ${styles.brandIcon}`}>radar</span>
-            SAHYOG MONITOR
+            SITUATION COMMAND
           </div>
-          <span className={styles.versionTag}>v2.0</span>
           <div className={styles.liveBadge}>
             <span className={styles.livePulse} />
             LIVE
@@ -255,10 +262,10 @@ export function SituationMonitor() {
           className={styles.mapContainer}
           zoomControl={false}
           attributionControl={false}
-          style={{ background: '#0d1117' }}
         >
           <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            key={theme}
+            url={mapTileUrl}
             attribution='&copy; CARTO'
           />
           <MapFitter markers={mapMarkers} />
@@ -266,19 +273,19 @@ export function SituationMonitor() {
             <CircleMarker
               key={`${m.type}-${m.id}`}
               center={[m.lat, m.lng]}
-              radius={m.type === 'sos' ? 8 : 5}
+              radius={m.type === 'sos' ? 8 : 6}
               pathOptions={{
-                color: m.type === 'sos' ? '#ef4444' : m.type === 'resource' ? '#3ecf8e' : '#60a5fa',
-                fillColor: m.type === 'sos' ? '#ef4444' : m.type === 'resource' ? '#3ecf8e' : '#60a5fa',
-                fillOpacity: 0.7,
+                color: m.type === 'sos' ? '#ef4444' : m.type === 'resource' ? '#34b27b' : '#3b82f6',
+                fillColor: m.type === 'sos' ? '#ef4444' : m.type === 'resource' ? '#34b27b' : '#3b82f6',
+                fillOpacity: 0.8,
                 weight: 2,
               }}
             >
               <Popup>
-                <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 12 }}>
+                <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#0f172a' }}>
                   <strong>{m.label}</strong><br />
-                  Status: {m.status || 'unknown'}<br />
-                  {fmtTime(m.time)}
+                  Status: {m.status || 'active'}<br />
+                  <span style={{ color: '#64748b', fontSize: 11 }}>{fmtTime(m.time)}</span>
                 </div>
               </Popup>
             </CircleMarker>
@@ -286,10 +293,10 @@ export function SituationMonitor() {
         </MapContainer>
 
         {/* Layer Panel */}
-        {layersOpen && (
+        {layersOpen ? (
           <div className={styles.layerPanel}>
             <div className={styles.layerTitle}>
-              LAYERS
+              MAP LAYERS
               <button className={styles.layerToggleBtn} onClick={() => setLayersOpen(false)}>
                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
               </button>
@@ -308,49 +315,64 @@ export function SituationMonitor() {
               </label>
             ))}
           </div>
-        )}
-        {!layersOpen && (
+        ) : (
           <button
             onClick={() => setLayersOpen(true)}
-            style={{ position: 'absolute', top: 12, left: 12, zIndex: 1000, background: 'rgba(17,24,39,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 10px', color: '#94a3b8', cursor: 'pointer', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}
+            style={{
+              position: 'absolute',
+              top: 12,
+              left: 12,
+              zIndex: 1000,
+              background: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              boxShadow: 'var(--shadow-md)',
+              borderRadius: 'var(--radius-md)',
+              padding: '6px 12px',
+              color: 'var(--color-text-primary)',
+              cursor: 'pointer',
+              fontSize: 11,
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6
+            }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>layers</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'var(--color-primary)' }}>layers</span>
             LAYERS
           </button>
         )}
 
         {/* Legend */}
         <div className={styles.mapLegend}>
-          <span className={styles.legendItem}><span className={styles.legendDot} style={{ background: '#ef4444' }} /> High Alert</span>
-          <span className={styles.legendItem}><span className={styles.legendDot} style={{ background: '#fbbf24' }} /> Elevated</span>
-          <span className={styles.legendItem}><span className={styles.legendDot} style={{ background: '#60a5fa' }} /> Monitoring</span>
-          <span className={styles.legendItem}><span className={styles.legendDot} style={{ background: '#3ecf8e' }} /> Safe</span>
-          <span className={styles.legendItem}><span className={styles.legendDot} style={{ background: '#c084fc' }} /> Medical</span>
+          <span className={styles.legendItem}><span className={styles.legendDot} style={{ background: '#ef4444' }} /> SOS Alert</span>
+          <span className={styles.legendItem}><span className={styles.legendDot} style={{ background: '#f59e0b' }} /> Danger Zone</span>
+          <span className={styles.legendItem}><span className={styles.legendDot} style={{ background: '#34b27b' }} /> Supply Hub</span>
+          <span className={styles.legendItem}><span className={styles.legendDot} style={{ background: '#3b82f6' }} /> Volunteer</span>
         </div>
       </div>
 
-      {/* ── Bottom 3-Deck ── */}
+      {/* ── Bottom 3-Deck Grid ── */}
       <div className={styles.deckGrid}>
         {/* Deck 1: Live Incident Feed */}
         <div className={styles.deck}>
           <div className={styles.deckHeader}>
             <div className={styles.deckTitle}>
               <span className={`material-symbols-outlined ${styles.deckTitleIcon}`}>breaking_news</span>
-              LIVE INCIDENT FEED
+              LIVE INCIDENTS
             </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               <div className={styles.deckLive}>
                 <span className={styles.deckLiveDot} />
                 LIVE
               </div>
-              <span className={styles.deckCounter}>• {incidentFeed.length}</span>
+              <span className={styles.deckCounter}>{incidentFeed.length}</span>
             </div>
           </div>
           <div className={styles.deckBody}>
             {incidentFeed.length === 0 ? (
               <div className={styles.emptyState}>
-                <span className={`material-symbols-outlined ${styles.emptyStateIcon}`}>inbox</span>
-                No incidents
+                <span className={`material-symbols-outlined ${styles.emptyStateIcon}`}>verified_user</span>
+                No active distress incidents
               </div>
             ) : (
               incidentFeed.map(item => (
@@ -361,7 +383,7 @@ export function SituationMonitor() {
                     item.type === 'resource' ? styles.incidentResource :
                     styles.incidentVolunteer
                   }`}>
-                    <span className="material-symbols-outlined">
+                    <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
                       {item.type === 'sos' ? 'sos' : item.type === 'disaster' ? 'flood' : item.type === 'resource' ? 'inventory_2' : 'group'}
                     </span>
                   </div>
@@ -373,8 +395,9 @@ export function SituationMonitor() {
                         item.status === 'resolved' ? styles.statusResolved :
                         styles.statusMonitoring
                       }`} />
-                      {item.status || 'unknown'}
-                      <span style={{ fontVariantNumeric: 'tabular-nums' }}>{fmtTime(item.time)}</span>
+                      <span>{item.status || 'active'}</span>
+                      <span>•</span>
+                      <span>{fmtTime(item.time)}</span>
                     </div>
                   </div>
                 </div>
@@ -388,11 +411,11 @@ export function SituationMonitor() {
           <div className={styles.deckHeader}>
             <div className={styles.deckTitle}>
               <span className={`material-symbols-outlined ${styles.deckTitleIcon}`}>psychology</span>
-              AI INSIGHTS
+              AI CRISIS INSIGHTS
             </div>
             <div className={styles.deckLive}>
               <span className={styles.deckLiveDot} />
-              LIVE
+              AI ACTIVE
             </div>
           </div>
           <div className={styles.deckBody}>
@@ -407,7 +430,7 @@ export function SituationMonitor() {
             <div className={styles.aiSection}>
               <div className={styles.aiSectionTitle}>
                 <span className={`material-symbols-outlined ${styles.aiSectionIcon}`}>trending_up</span>
-                AI FORECASTS
+                CRISIS FORECASTS
               </div>
               <div className={styles.forecastGrid}>
                 <div className={styles.forecastCard}>
@@ -419,11 +442,11 @@ export function SituationMonitor() {
                   <div className={`${styles.forecastValue} ${styles.forecastAmber}`}>{activeDisasters.length}</div>
                 </div>
                 <div className={styles.forecastCard}>
-                  <div className={styles.forecastLabel}>Resources</div>
+                  <div className={styles.forecastLabel}>Supplies</div>
                   <div className={`${styles.forecastValue} ${styles.forecastGreen}`}>{resArr.length}</div>
                 </div>
                 <div className={styles.forecastCard}>
-                  <div className={styles.forecastLabel}>Volunteers</div>
+                  <div className={styles.forecastLabel}>Responders</div>
                   <div className={`${styles.forecastValue} ${styles.forecastBlue}`}>{volunteers.length}</div>
                 </div>
               </div>
@@ -431,19 +454,18 @@ export function SituationMonitor() {
           </div>
         </div>
 
-        {/* Deck 3: Live News */}
+        {/* Deck 3: Live Broadcasts & Weather News */}
         <div className={styles.deck}>
           <div className={styles.deckHeader}>
             <div className={styles.deckTitle}>
               <span className={`material-symbols-outlined ${styles.deckTitleIcon}`}>live_tv</span>
-              LIVE NEWS
+              LIVE DISASTER BROADCASTS
             </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               <div className={styles.deckLive}>
                 <span className={styles.deckLiveDot} />
-                LIVE
+                STREAM
               </div>
-              <span className={styles.deckCounter}>• {newsTicker.length}</span>
             </div>
           </div>
           <div className={styles.deckTabs}>
@@ -459,17 +481,31 @@ export function SituationMonitor() {
           </div>
           <div className={styles.deckBody}>
             <div className={styles.newsPlayer}>
-              {currentChannel?.ytId ? (
+              {currentChannel?.type === 'weather' ? (
+                <div className={styles.newsPlayerOverlay}>
+                  <span className={`material-symbols-outlined ${styles.newsPlayIcon}`}>cloud</span>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-text-primary)' }}>IMD Doppler Weather Radar</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Satellite cloud cover & precipitation telemetry normal</div>
+                  <a href={currentChannel.url} target="_blank" rel="noreferrer" className={styles.newsLiveAction}>
+                    Open IMD Radar ↗
+                  </a>
+                </div>
+              ) : currentChannel?.ytId ? (
                 <iframe
-                  src={`https://www.youtube.com/embed/${currentChannel.ytId}?autoplay=0&mute=1`}
-                  allow="autoplay; encrypted-media"
+                  src={`https://www.youtube-nocookie.com/embed/${currentChannel.ytId}?autoplay=0&mute=1&rel=0`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                   title={currentChannel.name}
                 />
               ) : (
                 <div className={styles.newsPlayerOverlay}>
                   <span className={`material-symbols-outlined ${styles.newsPlayIcon}`}>live_tv</span>
-                  {currentChannel?.name || 'Channel'} — Coming Soon
+                  <div>{currentChannel?.name} Broadcast</div>
+                  {currentChannel?.url && (
+                    <a href={currentChannel.url} target="_blank" rel="noreferrer" className={styles.newsLiveAction}>
+                      Watch Live Stream ↗
+                    </a>
+                  )}
                 </div>
               )}
             </div>
@@ -478,7 +514,7 @@ export function SituationMonitor() {
                 <div key={i} className={styles.newsTickerItem}>
                   <span className={styles.newsTickerBullet} />
                   <span className={styles.newsTickerText}>
-                    {item.breaking && <span className={styles.breakingTag}>BREAKING</span>}
+                    {item.breaking && <span className={styles.breakingTag}>ALERT</span>}
                     {item.text}
                   </span>
                 </div>
