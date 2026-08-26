@@ -556,9 +556,8 @@
 
 /* ── Floating Details Popover Card ──────────────────────────────── */
 .newsPopoverCard {
-  position: absolute;
-  top: 42px;
-  left: 120px;
+  position: fixed;
+  top: 104px;
   z-index: 1000;
   background: var(--color-surface, #ffffff);
   border: 1px solid var(--color-border, #e2e8f0);

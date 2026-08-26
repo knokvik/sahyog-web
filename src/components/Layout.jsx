@@ -103,9 +103,9 @@ function NewsTickerItem({ item, onHover, onLeave }) {
   return (
     <div
       className={styles.tickerItem}
-      onMouseEnter={() => onHover(item)}
+      onMouseEnter={(e) => onHover(item, e)}
       onMouseLeave={onLeave}
-      onClick={() => onHover(item)}
+      onClick={(e) => onHover(item, e)}
     >
       <span className={`${styles.tickerChip} ${chipClass}`}>{item.tag}</span>
       <span>{item.headline}</span>
@@ -126,11 +126,20 @@ export function Layout() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [hoveredNewsItem, setHoveredNewsItem] = useState(null);
+  const [popoverPos, setPopoverPos] = useState({ left: 240 });
   const searchContainerRef = useRef(null);
   const popoverTimeoutRef = useRef(null);
 
-  const handleNewsHover = (item) => {
+  const handleNewsHover = (item, e) => {
     if (popoverTimeoutRef.current) clearTimeout(popoverTimeoutRef.current);
+    if (e && e.currentTarget) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const cardWidth = 420;
+      // Center directly below the hovered element/cursor
+      const centeredLeft = rect.left + rect.width / 2 - cardWidth / 2;
+      const clampedLeft = Math.max(16, Math.min(window.innerWidth - cardWidth - 16, centeredLeft));
+      setPopoverPos({ left: clampedLeft });
+    }
     setHoveredNewsItem(item);
   };
 
@@ -328,6 +337,7 @@ export function Layout() {
           {hoveredNewsItem && (
             <div
               className={styles.newsPopoverCard}
+              style={{ left: `${popoverPos.left}px` }}
               onMouseEnter={() => {
                 if (popoverTimeoutRef.current) clearTimeout(popoverTimeoutRef.current);
               }}
