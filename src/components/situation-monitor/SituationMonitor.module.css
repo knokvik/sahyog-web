@@ -1,0 +1,718 @@
+/* ── Situation Monitor Console — Dark Tactical Command Center ── */
+
+.console {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: calc(100vh - 64px);
+  background: #0a0e17;
+  color: #e2e8f0;
+  font-family: 'Inter', 'SF Mono', system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid rgba(59, 130, 246, 0.12);
+}
+
+/* ── Top Telemetry Bar ── */
+.telemetryBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 48px;
+  min-height: 48px;
+  background: linear-gradient(180deg, #111827 0%, #0d1117 100%);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.15);
+  flex-shrink: 0;
+  z-index: 10;
+  border-radius: 16px 16px 0 0;
+}
+
+.telemetryLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.brandMark {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: #e2e8f0;
+  text-transform: uppercase;
+}
+
+.brandIcon {
+  font-size: 20px;
+  color: #3ecf8e;
+}
+
+.versionTag {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 500;
+  padding: 2px 6px;
+  background: rgba(100, 116, 139, 0.15);
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.liveBadge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #3ecf8e;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.livePulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3ecf8e;
+  animation: livePulseAnim 1.5s ease-in-out infinite;
+}
+
+@keyframes livePulseAnim {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.6); }
+}
+
+.telemetryCenter {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.threatBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border: 1px solid;
+}
+
+.threatCritical {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.threatElevated {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.threatMonitoring {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.threatStable {
+  background: rgba(52, 178, 123, 0.15);
+  color: #3ecf8e;
+  border-color: rgba(52, 178, 123, 0.4);
+}
+
+.metricPills {
+  display: flex;
+  gap: 8px;
+}
+
+.metricPill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+}
+
+.metricPill .val {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.metricPill .pillIcon {
+  font-size: 14px;
+}
+
+.metricRed .val { color: #f87171; }
+.metricGreen .val { color: #3ecf8e; }
+.metricBlue .val { color: #60a5fa; }
+.metricAmber .val { color: #fbbf24; }
+
+.telemetryRight {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.clockDisplay {
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.6px;
+}
+
+.clockUtc {
+  color: #e2e8f0;
+  margin-right: 8px;
+}
+
+.viewToggle {
+  display: flex;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.viewBtn {
+  padding: 4px 10px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.viewBtnActive {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+/* ── Central Map Area ── */
+.mapArea {
+  flex: 1;
+  position: relative;
+  min-height: 300px;
+  background: #0d1117;
+}
+
+.mapContainer {
+  width: 100%;
+  height: 100%;
+}
+
+/* Layer Panel */
+.layerPanel {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1000;
+  background: rgba(17, 24, 39, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px;
+  width: 200px;
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+}
+
+.layerTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: #64748b;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.layerToggleBtn {
+  cursor: pointer;
+  font-size: 16px;
+  color: #94a3b8;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.layerItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-size: 12px;
+  font-weight: 500;
+  color: #cbd5e1;
+}
+
+.layerItem:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.layerCheck {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid #475569;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.layerCheck:checked {
+  border-color: currentColor;
+  background: currentColor;
+}
+
+.layerCheck:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.layerDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Map Legend */
+.mapLegend {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 18px;
+  background: rgba(17, 24, 39, 0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* ── Bottom Deck Grid ── */
+.deckGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+  height: 280px;
+  min-height: 280px;
+  flex-shrink: 0;
+  border-top: 1px solid rgba(59, 130, 246, 0.12);
+}
+
+.deck {
+  background: #111827;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.deck:last-child {
+  border-right: none;
+}
+
+.deckHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.deckTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.deckTitleIcon {
+  font-size: 16px;
+}
+
+.deckLive {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #3ecf8e;
+  letter-spacing: 0.6px;
+  padding: 2px 8px;
+  background: rgba(62, 207, 142, 0.1);
+  border-radius: 4px;
+  border: 1px solid rgba(62, 207, 142, 0.2);
+}
+
+.deckLiveDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3ecf8e;
+  animation: livePulseAnim 1.5s ease-in-out infinite;
+}
+
+.deckCounter {
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.deckTabs {
+  display: flex;
+  gap: 0;
+  padding: 0 12px;
+  overflow-x: auto;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.deckTab {
+  padding: 7px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #64748b;
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.deckTab:hover {
+  color: #94a3b8;
+}
+
+.deckTabActive {
+  color: #3ecf8e;
+  border-bottom-color: #3ecf8e;
+}
+
+.deckBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+  min-height: 0;
+}
+
+/* ── AI Insights ── */
+.aiSection {
+  margin-bottom: 14px;
+}
+
+.aiSectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.aiSectionIcon {
+  font-size: 14px;
+  color: #3ecf8e;
+}
+
+.aiBriefText {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #cbd5e1;
+}
+
+.forecastGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.forecastCard {
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+
+.forecastLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 4px;
+}
+
+.forecastValue {
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.forecastRed { color: #f87171; }
+.forecastGreen { color: #3ecf8e; }
+.forecastBlue { color: #60a5fa; }
+.forecastAmber { color: #fbbf24; }
+
+/* ── Incident Feed ── */
+.incidentItem {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.incidentItem:last-child {
+  border-bottom: none;
+}
+
+.incidentIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+
+.incidentSos { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+.incidentResource { background: rgba(62, 207, 142, 0.15); color: #3ecf8e; }
+.incidentDisaster { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+.incidentVolunteer { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+
+.incidentBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.incidentTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.incidentMeta {
+  font-size: 10px;
+  color: #64748b;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statusActive { background: #f87171; }
+.statusMonitoring { background: #fbbf24; }
+.statusResolved { background: #3ecf8e; }
+
+/* ── News Deck ── */
+.newsPlayer {
+  height: 120px;
+  background: #0d1117;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  position: relative;
+}
+
+.newsPlayer iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.newsPlayerOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.newsPlayIcon {
+  font-size: 32px;
+  color: #3ecf8e;
+}
+
+.newsTicker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.newsTickerItem {
+  display: flex;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  align-items: flex-start;
+}
+
+.newsTickerBullet {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #f87171;
+  margin-top: 6px;
+  flex-shrink: 0;
+  animation: livePulseAnim 2s ease-in-out infinite;
+}
+
+.newsTickerText {
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.breakingTag {
+  color: #f87171;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  margin-right: 4px;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #475569;
+  font-size: 12px;
+  gap: 8px;
+}
+
+.emptyStateIcon {
+  font-size: 28px;
+  opacity: 0.4;
+}
+
+/* Scrollbar */
+.deckBody::-webkit-scrollbar,
+.layerPanel::-webkit-scrollbar {
+  width: 4px;
+}
+
+.deckBody::-webkit-scrollbar-track,
+.layerPanel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.deckBody::-webkit-scrollbar-thumb,
+.layerPanel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .deckGrid {
+    grid-template-columns: 1fr 1fr;
+    height: auto;
+  }
+  .deck:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+  .metricPills {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .deckGrid {
+    grid-template-columns: 1fr;
+  }
+  .telemetryCenter {
+    display: none;
+  }
+  .layerPanel {
+    width: 160px;
+  }
+}

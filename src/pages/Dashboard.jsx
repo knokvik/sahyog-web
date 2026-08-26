@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useMe, useBackendHealth, useNeedsList, useDisastersList, useUsersList, useResourcesList, useServerStats, useMyAssignments, useRespondAssignment } from '../api/hooks';
 import { selectProfile } from '../store/slices/authSlice';
+import { SituationMonitor } from '../components/situation-monitor/SituationMonitor';
 import styles from './Dashboard.module.css';
 
 function StatCard({ icon, label, value, sub, accent = 'primary' }) {
@@ -227,8 +229,59 @@ export function Dashboard() {
     );
   }
 
+  const [viewMode, setViewMode] = useState('situation');
+
+  if (viewMode === 'situation') {
+    return (
+      <div className={styles.page} style={{ padding: 0, maxWidth: 'none', height: 'calc(100vh - 64px)' }}>
+        {/* View Toggle Bar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', background: 'var(--color-surface)', borderBottom: '1px solid var(--color-border)' }}>
+          <div style={{ display: 'flex', gap: 4, background: 'var(--color-bg)', borderRadius: 8, padding: 2 }}>
+            <button
+              onClick={() => setViewMode('situation')}
+              style={{ padding: '6px 14px', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: '#0a0e17', color: '#e2e8f0', letterSpacing: 0.5 }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2, marginRight: 4 }}>radar</span>
+              Situation Console
+            </button>
+            <button
+              onClick={() => setViewMode('management')}
+              style={{ padding: '6px 14px', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: 'transparent', color: 'var(--color-text-secondary)' }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2, marginRight: 4 }}>dashboard</span>
+              Management
+            </button>
+          </div>
+        </div>
+        <div style={{ flex: 1, overflow: 'hidden', height: 'calc(100% - 48px)' }}>
+          <SituationMonitor />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.page}>
+      {/* View Toggle */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 4, background: 'var(--color-bg)', borderRadius: 8, padding: 2 }}>
+          <button
+            onClick={() => setViewMode('situation')}
+            style={{ padding: '6px 14px', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: 'transparent', color: 'var(--color-text-secondary)' }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2, marginRight: 4 }}>radar</span>
+            Situation Console
+          </button>
+          <button
+            onClick={() => setViewMode('management')}
+            style={{ padding: '6px 14px', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: 'var(--color-primary)', color: '#fff', letterSpacing: 0.5 }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: -2, marginRight: 4 }}>dashboard</span>
+            Management
+          </button>
+        </div>
+      </div>
+
       {/* Stats */}
       <div className={styles.statsGrid}>
         <StatCard icon="sos" label="Active Needs" value={activeNeeds} sub={`${needsArr.length} total`} accent="danger" />
