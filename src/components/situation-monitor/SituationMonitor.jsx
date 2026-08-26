@@ -136,12 +136,56 @@ function parseLoc(item) {
 
 // ── NEWS DATA ──
 const NEWS_CHANNELS = [
-  { id: 'ddnews', name: 'DD NEWS', channelId: 'UC5_6B0Q_fS36oXgQ_6f4Q5g', ytId: 'sLBMgJE3VPM', url: 'https://www.youtube.com/watch?v=sLBMgJE3VPM', desc: 'Doordarshan National 24x7 Emergency Feed' },
-  { id: 'skynews', name: 'SKY NEWS', channelId: 'UC6ZFN9Tx6xh-skXCuRHCDpQ', ytId: '9Auq9mYxFEE', url: 'https://www.youtube.com/watch?v=9Auq9mYxFEE', desc: 'Sky News 24/7 Global Live' },
-  { id: 'aljazeera', name: 'AL JAZEERA', channelId: 'UCNye-wNBqNL5ZzHSJj3l8Bg', ytId: 'bNyUyrR0PHo', url: 'https://www.youtube.com/watch?v=bNyUyrR0PHo', desc: 'Al Jazeera Global English Live' },
-  { id: 'aajtak', name: 'AAJ TAK', channelId: 'UCt4t-jeY85JegMlZ-E5UWtA', ytId: 'f0xP4_2K8g4', url: 'https://www.youtube.com/watch?v=f0xP4_2K8g4', desc: 'Breaking Emergency Hindi Feed' },
-  { id: 'imd', name: 'IMD RADAR', type: 'weather', url: 'https://mausam.imd.gov.in/', desc: 'India Meteorological Doppler Radar' },
-  { id: 'ndma', name: 'NDMA ADVISORY', type: 'advisory', url: 'https://ndma.gov.in/', desc: 'National Disaster Guidelines' },
+  {
+    id: 'abcnews',
+    name: 'ABC NEWS LIVE',
+    ytId: 'iipR5yUp36o',
+    url: 'https://www.youtube.com/watch?v=iipR5yUp36o',
+    desc: 'ABC News 24/7 Global Emergency Coverage'
+  },
+  {
+    id: 'cna',
+    name: 'CNA 24/7',
+    ytId: 'XWq5kBlakcQ',
+    url: 'https://www.youtube.com/watch?v=XWq5kBlakcQ',
+    desc: 'Channel NewsAsia 24-Hour International Live'
+  },
+  {
+    id: 'timesnow',
+    name: 'TIMES NOW',
+    channelId: 'UC6RJ7-PaXg6TIH2BzZfTV7w',
+    url: 'https://www.youtube.com/channel/UC6RJ7-PaXg6TIH2BzZfTV7w',
+    desc: 'Times Now 24/7 Live Emergency News'
+  },
+  {
+    id: 'aljazeera',
+    name: 'AL JAZEERA',
+    channelId: 'UCNye-wNBqNL5ZzHSJj3l8Bg',
+    ytId: 'bNyUyrR0PHo',
+    url: 'https://www.aljazeera.com/video/live',
+    desc: 'Al Jazeera Global English 24/7'
+  },
+  {
+    id: 'ndtv',
+    name: 'NDTV 24x7',
+    type: 'weblink',
+    url: 'https://www.ndtv.com/livetv-ndtv24x7',
+    desc: 'NDTV 24x7 Live Indian & Global News'
+  },
+  {
+    id: 'imd',
+    name: 'IMD RADAR',
+    type: 'weather',
+    url: 'https://mausam.imd.gov.in/',
+    desc: 'India Meteorological Doppler Radar'
+  },
+  {
+    id: 'ndma',
+    name: 'NDMA ADVISORY',
+    type: 'advisory',
+    url: 'https://ndma.gov.in/',
+    desc: 'National Disaster Guidelines'
+  },
 ];
 
 // ── LAYER CONFIG ──
@@ -218,7 +262,7 @@ export function SituationMonitor() {
   }, [sosArr, resArr, layers]);
 
   // ── News ──
-  const [activeChannel, setActiveChannel] = useState('ddnews');
+  const [activeChannel, setActiveChannel] = useState('abcnews');
   const currentChannel = NEWS_CHANNELS.find(c => c.id === activeChannel);
 
   // ── AI brief ──
@@ -598,6 +642,17 @@ export function SituationMonitor() {
                   </div>
                   <a href={currentChannel.url} target="_blank" rel="noreferrer" className={styles.newsLiveAction}>
                     Open NDMA Portal ↗
+                  </a>
+                </div>
+              ) : currentChannel?.type === 'weblink' ? (
+                <div className={styles.newsPlayerOverlay}>
+                  <span className={`material-symbols-outlined ${styles.newsPlayIcon}`} style={{ color: 'var(--color-info)' }}>live_tv</span>
+                  <div style={{ fontWeight: 800, fontSize: 13, color: 'var(--color-text-primary)' }}>{currentChannel?.name} Broadcast</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', maxWidth: 260, margin: '0 auto' }}>
+                    {currentChannel?.desc}
+                  </div>
+                  <a href={currentChannel.url} target="_blank" rel="noreferrer" className={styles.newsLiveAction}>
+                    Open Live Broadcast Stream ↗
                   </a>
                 </div>
               ) : (
