@@ -346,10 +346,13 @@ export function LiveMap() {
             })
             .catch(err => console.error('Failed to fetch responders:', err));
 
-        // Socket.io connection
-        const socket = io(window.location.origin, {
+        // Socket.io connection with fallback
+        const socketUrl = import.meta.env.VITE_API_URL || window.location.origin;
+        const socket = io(socketUrl, {
             path: '/socket.io',
-            transports: ['websocket'],
+            transports: ['websocket', 'polling'],
+            reconnectionAttempts: 10,
+            reconnectionDelay: 1000,
         });
 
         socket.on('new_sos_alert', (data) => {
