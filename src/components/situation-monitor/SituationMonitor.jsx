@@ -4,9 +4,78 @@ import { useAuth } from '@clerk/clerk-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest, apiPaths } from '../../lib/api';
 import { selectTheme } from '../../store/slices/uiSlice';
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import styles from './SituationMonitor.module.css';
+
+// ── Tactical Marker Icon Generator ──
+function createTacticalIcon(type, status) {
+  if (type === 'sos') {
+    return L.divIcon({
+      className: 'tactical-icon-wrap',
+      html: `
+        <div class="${styles.tacticalSosPin}">
+          <div class="${styles.tacticalPingRing}"></div>
+          <div class="${styles.tacticalPingRing2}"></div>
+          <div class="${styles.tacticalCoreSos}">
+            <span class="material-symbols-outlined" style="font-size:12px;font-weight:900;line-height:1;display:block;">sos</span>
+          </div>
+        </div>
+      `,
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+      popupAnchor: [0, -14],
+    });
+  }
+
+  if (type === 'disaster') {
+    return L.divIcon({
+      className: 'tactical-icon-wrap',
+      html: `
+        <div class="${styles.tacticalDisasterPin}">
+          <div class="${styles.tacticalPingRingAmber}"></div>
+          <div class="${styles.tacticalCoreAmber}">
+            <span class="material-symbols-outlined" style="font-size:12px;line-height:1;display:block;">flood</span>
+          </div>
+        </div>
+      `,
+      iconSize: [26, 26],
+      iconAnchor: [13, 13],
+      popupAnchor: [0, -13],
+    });
+  }
+
+  if (type === 'resource') {
+    return L.divIcon({
+      className: 'tactical-icon-wrap',
+      html: `
+        <div class="${styles.tacticalResourcePin}">
+          <div class="${styles.tacticalCoreGreen}">
+            <span class="material-symbols-outlined" style="font-size:12px;line-height:1;display:block;">inventory_2</span>
+          </div>
+        </div>
+      `,
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+      popupAnchor: [0, -12],
+    });
+  }
+
+  return L.divIcon({
+    className: 'tactical-icon-wrap',
+    html: `
+      <div class="${styles.tacticalVolPin}">
+        <div class="${styles.tacticalCoreBlue}">
+          <span class="material-symbols-outlined" style="font-size:11px;line-height:1;display:block;">group</span>
+        </div>
+      </div>
+    `,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+    popupAnchor: [0, -11],
+  });
+}
 
 // ── Live Clock ──
 function LiveClock() {
@@ -272,25 +341,52 @@ export function SituationMonitor() {
           />
           <MapFitter markers={mapMarkers} />
           {mapMarkers.map(m => (
-            <CircleMarker
+            <Marker
               key={`${m.type}-${m.id}`}
-              center={[m.lat, m.lng]}
-              radius={m.type === 'sos' ? 8 : 6}
-              pathOptions={{
-                color: m.type === 'sos' ? '#ef4444' : m.type === 'resource' ? '#34b27b' : '#3b82f6',
-                fillColor: m.type === 'sos' ? '#ef4444' : m.type === 'resource' ? '#34b27b' : '#3b82f6',
-                fillOpacity: 0.8,
-                weight: 2,
-              }}
+              position={[m.lat, m.lng]}
+              icon={createTacticalIcon(m.type, m.status)}
             >
               <Popup>
-                <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#0f172a' }}>
-                  <strong>{m.label}</strong><br />
-                  Status: {m.status || 'active'}<br />
-                  <span style={{ color: '#64748b', fontSize: 11 }}>{fmtTime(m.time)}</span>
+                <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, padding: '4px 2px', minWidth: 160 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{
+                      fontWeight: 800,
+                      fontSize: 10,
+                      textTransform: 'uppercase',
+                      letterSpacing: 0.6,
+                      color: m.type === 'sos' ? '#ef4444' : m.type === 'resource' ? '#10b981' : '#3b82f6',
+                      background: m.type === 'sos' ? 'rgba(239,68,68,0.12)' : 'rgba(16,185,129,0.12)',
+                      padding: '2px 6px',
+                      borderRadius: 4
+                    }}>
+                      {m.type === 'sos' ? 'SOS DISTRESS' : m.type === 'resource' ? 'SUPPLY HUB' : 'INCIDENT'}
+                    </span>
+                    <span style={{ fontSize: 11, color: '#94a3b8' }}>{fmtTime(m.time)}</span>
+                  </div>
+                  <strong style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>{m.label}</strong>
+                  <div style={{ fontSize: 11, color: '#64748b', marginBottom: 8 }}>
+                    Status: <span style={{ fontWeight: 600, color: m.status === 'resolved' ? '#10b981' : '#ef4444' }}>{m.status || 'Active'}</span>
+                  </div>
+                  <a
+                    href={`/map?lat=${m.lat}&lng=${m.lng}`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: '#fff',
+                      background: '#34b27b',
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      textDecoration: 'none'
+                    }}
+                  >
+                    View in Live Map ↗
+                  </a>
                 </div>
               </Popup>
-            </CircleMarker>
+            </Marker>
           ))}
         </MapContainer>
 
