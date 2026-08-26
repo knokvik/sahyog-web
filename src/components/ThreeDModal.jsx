@@ -33,12 +33,19 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
             try {
                 if (!containerRef.current) return;
 
-                // High-resolution satellite imagery layer that works reliably without requiring Ion token
-                const imageryProvider = new Cesium.UrlTemplateImageryProvider({
-                    url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-                    maximumLevel: 19,
-                    credit: '© Esri, Maxar, Earthstar Geographics'
-                });
+                // 1. High-resolution satellite imagery provider for Cesium 1.138+
+                let imageryProvider;
+                try {
+                    imageryProvider = await Cesium.UrlTemplateImageryProvider.fromUrl(
+                        'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                        {
+                            maximumLevel: 19,
+                            credit: '© Esri, Maxar, Earthstar Geographics'
+                        }
+                    );
+                } catch (_) {
+                    imageryProvider = await Cesium.createWorldImageryAsync();
+                }
 
                 viewer = new Cesium.Viewer(containerRef.current, {
                     animation: false,
@@ -51,7 +58,7 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                     navigationHelpButton: false,
                     sceneModePicker: false,
                     fullscreenButton: false,
-                    imageryProvider: imageryProvider,
+                    baseLayer: new Cesium.ImageryLayer(imageryProvider),
                     skyAtmosphere: new Cesium.SkyAtmosphere(),
                     shouldAnimate: true,
                     scene3DOnly: true,
@@ -73,15 +80,26 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                 viewer.scene.fog.density = 0.0001;
                 viewer.scene.globe.enableLighting = false;
 
-                // Try to load 3D Tileset if valid Ion token is configured
-                if (hasValidIonToken) {
+                // 2. Load Google Photorealistic 3D Tileset if API key available, or Cesium Ion fallback
+                if (isRealGoogleKey) {
+                    try {
+                        const googleTileset = await Cesium.createGooglePhotorealistic3DTileset({
+                            key: googleApiKey
+                        });
+                        if (viewer && !viewer.isDestroyed()) {
+                            viewer.scene.primitives.add(googleTileset);
+                        }
+                    } catch (googleTilesErr) {
+                        console.warn('Google 3D Tiles fallback:', googleTilesErr?.message);
+                    }
+                } else if (hasValidIonToken) {
                     try {
                         const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2275207);
                         if (viewer && !viewer.isDestroyed()) {
                             viewer.scene.primitives.add(tileset);
                         }
                     } catch (tilesetErr) {
-                        console.warn('3D Tileset not available on this token, falling back to 3D satellite globe:', tilesetErr?.message);
+                        console.warn('Cesium Ion 3D Tileset fallback:', tilesetErr?.message);
                     }
                 }
 
@@ -178,7 +196,7 @@ const ThreeDModal = ({ isOpen, onClose, lat, lng, alertInfo, extraMarkers = [] }
                             Cesium.Math.toRadians(-45.0),
                             1800
                         ),
-                        duration: 2.5,
+                        duration: 2.0,
                         easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
                         complete: () => {
                             if (viewer && !viewer.isDestroyed()) {

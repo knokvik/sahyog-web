@@ -277,6 +277,19 @@ export function LiveMap() {
                         }
                     });
                     setAlerts(activeAlerts);
+
+                    // Default map to latest active SOS coordinate if no query param was provided
+                    if (queryLat === null || queryLng === null) {
+                        const list = Object.values(activeAlerts);
+                        if (list.length > 0) {
+                            const latest = list[0];
+                            const lat = asNumber(latest.lat ?? latest.location?.coordinates?.[1]);
+                            const lng = asNumber(latest.lng ?? latest.location?.coordinates?.[0]);
+                            if (lat !== null && lng !== null) {
+                                setTargetLocation({ lat, lng, zoom: 15 });
+                            }
+                        }
+                    }
                 }
             })
             .catch(err => console.error('Failed to fetch initial SOS alerts:', err));
@@ -478,10 +491,46 @@ export function LiveMap() {
                                     <p style={{ margin: '4px 0', fontSize: '11px', color: '#64748b' }}>{new Date(alert.created_at).toLocaleString()}</p>
                                     <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
                                         <button
-                                            style={{ flex: 1, padding: '6px 12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                                            style={{
+                                                flex: 1,
+                                                padding: '7px 8px',
+                                                background: '#ef4444',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                cursor: 'pointer',
+                                                fontSize: '11px',
+                                                fontWeight: 'bold',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '4px'
+                                            }}
                                             onClick={() => window.location.href = `/sos`}
                                         >
-                                            Manage SOS
+                                            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>list_alt</span>
+                                            Manage
+                                        </button>
+                                        <button
+                                            style={{
+                                                flex: 1,
+                                                padding: '7px 8px',
+                                                background: '#0f172a',
+                                                color: '#38bdf8',
+                                                border: '1px solid rgba(56, 189, 248, 0.4)',
+                                                borderRadius: '6px',
+                                                cursor: 'pointer',
+                                                fontSize: '11px',
+                                                fontWeight: 'bold',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '4px'
+                                            }}
+                                            onClick={() => setSelectedAlertFor3D(alert)}
+                                        >
+                                            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>view_in_ar</span>
+                                            3D View
                                         </button>
                                     </div>
                                 </div>
@@ -553,6 +602,18 @@ export function LiveMap() {
                     <span style={{ color: 'var(--color-text-muted, #64748b)', fontSize: '11px' }}>Shelters</span>
                 </div>
             </div>
+
+            {/* 3D Virtual Command & Satellite Modal */}
+            {selectedAlertFor3D && (
+                <ThreeDModal
+                    isOpen={Boolean(selectedAlertFor3D)}
+                    onClose={() => setSelectedAlertFor3D(null)}
+                    lat={selectedAlertFor3D.lat || (selectedAlertFor3D.location?.coordinates ? selectedAlertFor3D.location.coordinates[1] : null)}
+                    lng={selectedAlertFor3D.lng || (selectedAlertFor3D.location?.coordinates ? selectedAlertFor3D.location.coordinates[0] : null)}
+                    alertInfo={selectedAlertFor3D}
+                    extraMarkers={volList}
+                />
+            )}
         </div>
     );
 }
