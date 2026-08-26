@@ -206,7 +206,7 @@ export function SituationMonitor() {
     : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
   return (
-    <div className={styles.console}>
+    <div className={styles.situationSection}>
       {/* ── Telemetry Bar ── */}
       <div className={styles.telemetryBar}>
         <div className={styles.telemetryLeft}>
@@ -255,7 +255,7 @@ export function SituationMonitor() {
       </div>
 
       {/* ── Central Tactical Map ── */}
-      <div className={styles.mapArea}>
+      <div className={styles.mapCard}>
         <MapContainer
           center={[20.5937, 78.9629]}
           zoom={5}
@@ -354,7 +354,7 @@ export function SituationMonitor() {
       {/* ── Bottom 3-Deck Grid ── */}
       <div className={styles.deckGrid}>
         {/* Deck 1: Live Incident Feed */}
-        <div className={styles.deck}>
+        <div className={styles.deckCard}>
           <div className={styles.deckHeader}>
             <div className={styles.deckTitle}>
               <span className={`material-symbols-outlined ${styles.deckTitleIcon}`}>breaking_news</span>
@@ -407,7 +407,7 @@ export function SituationMonitor() {
         </div>
 
         {/* Deck 2: AI Crisis Insights */}
-        <div className={styles.deck}>
+        <div className={styles.deckCard}>
           <div className={styles.deckHeader}>
             <div className={styles.deckTitle}>
               <span className={`material-symbols-outlined ${styles.deckTitleIcon}`}>psychology</span>
@@ -455,7 +455,7 @@ export function SituationMonitor() {
         </div>
 
         {/* Deck 3: Live Broadcasts & Weather News */}
-        <div className={styles.deck}>
+        <div className={styles.deckCard}>
           <div className={styles.deckHeader}>
             <div className={styles.deckTitle}>
               <span className={`material-symbols-outlined ${styles.deckTitleIcon}`}>live_tv</span>
