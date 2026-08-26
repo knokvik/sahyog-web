@@ -43,6 +43,77 @@ const navSections = [
   }
 ];
 
+const NEWS_ITEMS = [
+  {
+    id: 1,
+    tag: 'RESCUE OPS',
+    severity: 'critical',
+    headline: 'NDRF teams deployed to Sector 4 affected by flash floods',
+    location: 'Sector 4',
+    time: '2m ago',
+    details: '4 motorized search & rescue boats deployed. 38 individuals evacuated to Municipal Relief Shelter #2.',
+    actionLabel: 'View on Map',
+    actionLink: '/map?lat=18.5204&lng=73.8567'
+  },
+  {
+    id: 2,
+    tag: 'WEATHER ALERT',
+    severity: 'warning',
+    headline: 'Heavy rainfall advisory issued for coastal regions over next 48 hours',
+    location: 'Coastal Belt',
+    time: '14m ago',
+    details: 'IMD Orange alert active. Expected precipitation 120-180mm. Emergency relief staging centers placed on high alert.',
+    actionLabel: 'View Escalations',
+    actionLink: '/escalations'
+  },
+  {
+    id: 3,
+    tag: 'SUPPLY DISPATCH',
+    severity: 'info',
+    headline: 'Medical supplies & trauma kits airdropped in remote cut-off hamlets',
+    location: 'Ghat Zone 3',
+    time: '28m ago',
+    details: 'IAF helicopter dispatch #42 successfully delivered 400 ration kits, water filtration units, and trauma bandages.',
+    actionLabel: 'View Resources',
+    actionLink: '/resources'
+  },
+  {
+    id: 4,
+    tag: 'BLE MESH',
+    severity: 'success',
+    headline: 'P2P Bluetooth mesh networking relay active across offline zones',
+    location: 'Rural Grid B',
+    time: '45m ago',
+    details: '14 multi-hop relays active. 28 distress beacons successfully synced through peer nodes without cellular towers.',
+    actionLabel: 'View Orchestrator',
+    actionLink: '/orchestrator'
+  }
+];
+
+function NewsTickerItem({ item, onHover, onLeave }) {
+  const chipClass =
+    item.severity === 'critical'
+      ? styles.tickerChipRed
+      : item.severity === 'warning'
+      ? styles.tickerChipAmber
+      : item.severity === 'success'
+      ? styles.tickerChipGreen
+      : styles.tickerChipBlue;
+
+  return (
+    <div
+      className={styles.tickerItem}
+      onMouseEnter={() => onHover(item)}
+      onMouseLeave={onLeave}
+      onClick={() => onHover(item)}
+    >
+      <span className={`${styles.tickerChip} ${chipClass}`}>{item.tag}</span>
+      <span>{item.headline}</span>
+      <span className={styles.tickerLocationBadge}>{item.location}</span>
+    </div>
+  );
+}
+
 export function Layout() {
   const dispatch = useDispatch();
   const sidebarOpen = useSelector((s) => s.ui.sidebarOpen);
@@ -54,7 +125,20 @@ export function Layout() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [hoveredNewsItem, setHoveredNewsItem] = useState(null);
   const searchContainerRef = useRef(null);
+  const popoverTimeoutRef = useRef(null);
+
+  const handleNewsHover = (item) => {
+    if (popoverTimeoutRef.current) clearTimeout(popoverTimeoutRef.current);
+    setHoveredNewsItem(item);
+  };
+
+  const handleNewsLeave = () => {
+    popoverTimeoutRef.current = setTimeout(() => {
+      setHoveredNewsItem(null);
+    }, 250);
+  };
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -214,31 +298,76 @@ export function Layout() {
         </header>
 
         {/* Live News Ticker */}
-        <div className={styles.newsTickerWrapper}>
+        <div
+          className={styles.newsTickerWrapper}
+          onMouseLeave={handleNewsLeave}
+        >
           <div className={styles.newsTickerBadge}>
             <span className={styles.pulseDot}></span>
             LIVE NEWS
           </div>
           <div className={styles.newsTickerContent}>
             <div className={styles.newsTickerTrack}>
-              <span>NDRF teams deployed to Sector 4 affected by flash floods.</span>
-              <span className={styles.tickerSeparator}>|</span>
-              <span>Heavy rainfall advisory issued for coastal regions over next 48 hours.</span>
-              <span className={styles.tickerSeparator}>|</span>
-              <span>Medical supplies airdropped in remote areas.</span>
-              <span className={styles.tickerSeparator}>|</span>
-              <span>Communication mesh networking active in rural offline zones.</span>
-              {/* Duplicate for infinite scroll loop */}
-              <span className={styles.tickerSeparator}>|</span>
-              <span>NDRF teams deployed to Sector 4 affected by flash floods.</span>
-              <span className={styles.tickerSeparator}>|</span>
-              <span>Heavy rainfall advisory issued for coastal regions over next 48 hours.</span>
-              <span className={styles.tickerSeparator}>|</span>
-              <span>Medical supplies airdropped in remote areas.</span>
-              <span className={styles.tickerSeparator}>|</span>
-              <span>Communication mesh networking active in rural offline zones.</span>
+              {NEWS_ITEMS.map((item) => (
+                <span key={`news-1-${item.id}`} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                  <NewsTickerItem item={item} onHover={handleNewsHover} onLeave={handleNewsLeave} />
+                  <span className={styles.tickerSeparator}>•</span>
+                </span>
+              ))}
+              {/* Duplicate for smooth infinite loop */}
+              {NEWS_ITEMS.map((item) => (
+                <span key={`news-2-${item.id}`} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                  <NewsTickerItem item={item} onHover={handleNewsHover} onLeave={handleNewsLeave} />
+                  <span className={styles.tickerSeparator}>•</span>
+                </span>
+              ))}
             </div>
           </div>
+
+          {/* Expandable Details Popover Card on Hover */}
+          {hoveredNewsItem && (
+            <div
+              className={styles.newsPopoverCard}
+              onMouseEnter={() => {
+                if (popoverTimeoutRef.current) clearTimeout(popoverTimeoutRef.current);
+              }}
+              onMouseLeave={handleNewsLeave}
+            >
+              <div className={styles.popoverHeader}>
+                <span
+                  className={`${styles.tickerChip} ${
+                    hoveredNewsItem.severity === 'critical'
+                      ? styles.tickerChipRed
+                      : hoveredNewsItem.severity === 'warning'
+                      ? styles.tickerChipAmber
+                      : hoveredNewsItem.severity === 'success'
+                      ? styles.tickerChipGreen
+                      : styles.tickerChipBlue
+                  }`}
+                >
+                  {hoveredNewsItem.tag}
+                </span>
+                <span style={{ fontSize: 11, color: 'var(--color-text-muted, #64748b)', fontWeight: 600 }}>
+                  {hoveredNewsItem.time}
+                </span>
+              </div>
+              <div className={styles.popoverTitle}>{hoveredNewsItem.headline}</div>
+              <div className={styles.popoverDesc}>{hoveredNewsItem.details}</div>
+              <div className={styles.popoverFooter}>
+                <span style={{ color: 'var(--color-text-muted, #64748b)' }}>
+                  📍 {hoveredNewsItem.location}
+                </span>
+                <NavLink
+                  to={hoveredNewsItem.actionLink}
+                  className={styles.popoverActionBtn}
+                  onClick={() => setHoveredNewsItem(null)}
+                >
+                  {hoveredNewsItem.actionLabel}
+                  <span className="material-symbols-outlined" style={{ fontSize: 14 }}>arrow_forward</span>
+                </NavLink>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className={styles.content}>
