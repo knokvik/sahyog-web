@@ -21,14 +21,25 @@ function MapRecenter({ target }) {
     const lastTargetRef = useRef(null);
 
     useEffect(() => {
+        // Ensure tiles and canvas layers align immediately without layout lag
+        map.invalidateSize();
+    }, [map]);
+
+    useEffect(() => {
         if (target && target.lat != null && target.lng != null) {
             const key = `${Number(target.lat).toFixed(4)}_${Number(target.lng).toFixed(4)}_${target.zoom || 15}`;
             if (lastTargetRef.current !== key) {
+                const isFirst = lastTargetRef.current === null;
                 lastTargetRef.current = key;
-                map.flyTo([target.lat, target.lng], target.zoom || 15, {
-                    animate: true,
-                    duration: 1.5,
-                });
+                if (isFirst) {
+                    // Settle immediately on open without shifting or floating pins
+                    map.setView([target.lat, target.lng], target.zoom || 15, { animate: false });
+                } else {
+                    map.flyTo([target.lat, target.lng], target.zoom || 15, {
+                        animate: true,
+                        duration: 1.2,
+                    });
+                }
             }
         }
     }, [target, map]);
@@ -373,8 +384,8 @@ export function LiveMap() {
             overflow: 'hidden'
         }}>
             <MapContainer
-                center={[18.5204, 73.8567]}
-                zoom={11}
+                center={targetLocation ? [targetLocation.lat, targetLocation.lng] : [18.5204, 73.8567]}
+                zoom={targetLocation ? (targetLocation.zoom || 15) : 11}
                 minZoom={3.5}
                 maxZoom={18}
                 maxBounds={[[-85, -180], [85, 180]]}
