@@ -116,7 +116,7 @@ export function SettingsPanel({ isOpen, onClose }) {
                                     <option key={v.id} value={v.id}>{v.full_name || v.email || v.id}</option>
                                 ))}
                             </select>
-                            <button className={`${styles.button} ${styles.dangerButton}`} disabled={!volunteerId} onClick={() => setAction('deactivate')}>
+                            <button className={styles.button} disabled={!volunteerId} onClick={() => setAction('deactivate')}>
                                 Deactivate
                             </button>
                         </div>
@@ -131,8 +131,8 @@ export function SettingsPanel({ isOpen, onClose }) {
                                     <option key={d.id} value={d.id}>{d.name || d.id}</option>
                                 ))}
                             </select>
-                            <button className={`${styles.button} ${styles.dangerButton}`} disabled={!disasterId} onClick={() => setAction('close_disaster')}>
-                                Close
+                            <button className={styles.button} disabled={!disasterId} onClick={() => setAction('close_disaster')}>
+                                Close Disaster
                             </button>
                         </div>
                     </section>
@@ -146,8 +146,8 @@ export function SettingsPanel({ isOpen, onClose }) {
                                     <option key={z.zone_id || z.id} value={z.zone_id || z.id}>{z.zone_name || z.name || z.id}</option>
                                 ))}
                             </select>
-                            <button className={`${styles.button} ${styles.warningButton}`} disabled={!zoneId} onClick={() => setAction('freeze_zone')}>
-                                Freeze
+                            <button className={styles.button} disabled={!zoneId} onClick={() => setAction('freeze_zone')}>
+                                Freeze Zone
                             </button>
                         </div>
                     </section>
