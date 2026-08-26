@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Tooltip, CircleMarker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet.heat';
@@ -15,6 +15,26 @@ L.Icon.Default.mergeOptions({
     iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
+
+function MapRecenter({ target }) {
+    const map = useMap();
+    const lastTargetRef = useRef(null);
+
+    useEffect(() => {
+        if (target && target.lat != null && target.lng != null) {
+            const key = `${Number(target.lat).toFixed(4)}_${Number(target.lng).toFixed(4)}_${target.zoom || 15}`;
+            if (lastTargetRef.current !== key) {
+                lastTargetRef.current = key;
+                map.flyTo([target.lat, target.lng], target.zoom || 15, {
+                    animate: true,
+                    duration: 1.5,
+                });
+            }
+        }
+    }, [target, map]);
+
+    return null;
+}
 
 const shelterIcon = L.divIcon({
     className: 'heatmap-shelter-marker',
@@ -129,16 +149,6 @@ function getResponderIcon(role, isLive) {
     }
 }
 
-function MapRecenter({ center }) {
-    const map = useMap();
-    useEffect(() => {
-        if (center) {
-            map.flyTo(center, map.getZoom(), { animate: true, duration: 2 });
-        }
-    }, [center, map]);
-    return null;
-}
-
 function ZoomDisplay() {
     const map = useMapEvents({
         zoomend: () => {
@@ -217,14 +227,29 @@ function LiveHeatLayer({ points }) {
 }
 
 export function LiveMap() {
+    const [searchParams] = useSearchParams();
+    const queryLat = asNumber(searchParams.get('lat'));
+    const queryLng = asNumber(searchParams.get('lng'));
+
     const [alerts, setAlerts] = useState({}); // { id: alertData }
     const [volunteers, setVolunteers] = useState({}); // { id: userData }
     const [heatmapPoints, setHeatmapPoints] = useState([]);
     const [shelters, setShelters] = useState([]);
     const [heatmapUpdatedAt, setHeatmapUpdatedAt] = useState(null);
-    const [mapCenter, setMapCenter] = useState(null);
+    const [targetLocation, setTargetLocation] = useState(() => {
+        if (queryLat !== null && queryLng !== null) {
+            return { lat: queryLat, lng: queryLng, zoom: 15 };
+        }
+        return null;
+    });
     const [selectedAlertFor3D, setSelectedAlertFor3D] = useState(null);
     const { getToken, isLoaded, isSignedIn } = useAuth();
+
+    useEffect(() => {
+        if (queryLat !== null && queryLng !== null) {
+            setTargetLocation({ lat: queryLat, lng: queryLng, zoom: 15 });
+        }
+    }, [queryLat, queryLng]);
 
     useEffect(() => {
         if (!isLoaded || !isSignedIn) return;
@@ -269,9 +294,11 @@ export function LiveMap() {
             console.log('New SOS Alert received on Map:', data);
             setAlerts(prev => ({ ...prev, [data.id]: data }));
 
-            // Auto-pan to new emergency
-            if (data.lat && data.lng) {
-                setMapCenter([data.lat, data.lng]);
+            // Smoothly focus map on incoming emergency without bouncing back
+            const lat = asNumber(data.lat ?? data.location?.coordinates?.[1]);
+            const lng = asNumber(data.lng ?? data.location?.coordinates?.[0]);
+            if (lat !== null && lng !== null) {
+                setTargetLocation({ lat, lng, zoom: 15 });
             }
         });
 
@@ -327,10 +354,6 @@ export function LiveMap() {
             setHeatmapPoints(points);
             setShelters(sheltersData);
             setHeatmapUpdatedAt(payload.updatedAt || new Date().toISOString());
-
-            if (!mapCenter && points.length > 0) {
-                setMapCenter([points[0].lat, points[0].lng]);
-            }
         });
 
         return () => {
@@ -363,7 +386,7 @@ export function LiveMap() {
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                <MapRecenter center={mapCenter} />
+                <MapRecenter target={targetLocation} />
                 <ZoomDisplay />
 
                 {/* Smooth Heatmap Layer */}

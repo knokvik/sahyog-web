@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
 import { useAuth } from '@clerk/clerk-react';
 
@@ -36,10 +37,10 @@ export function RealtimeProvider({ children }) {
 
             setToasts(prev => [...prev, newToast]);
 
-            // Auto-remove after 10 seconds
+            // Auto-remove after 12 seconds
             setTimeout(() => {
                 removeToast(id);
-            }, 10000);
+            }, 12000);
         });
 
         setSocket(newSocket);
@@ -82,23 +83,40 @@ export function RealtimeProvider({ children }) {
 
 function EmergencyToast({ toast, onClose }) {
     const { alert } = toast;
+    const navigate = useNavigate();
+
+    const handleToastClick = () => {
+        const lat = alert.lat || (alert.location?.coordinates ? alert.location.coordinates[1] : null);
+        const lng = alert.lng || (alert.location?.coordinates ? alert.location.coordinates[0] : null);
+        if (lat && lng) {
+            navigate(`/map?lat=${lat}&lng=${lng}&t=${Date.now()}`);
+        } else {
+            navigate('/map');
+        }
+        onClose();
+    };
 
     return (
-        <div style={{
-            background: 'rgba(239, 68, 68, 0.95)',
-            color: 'white',
-            padding: '16px 20px',
-            borderRadius: '16px',
-            boxShadow: '0 20px 25px -5px rgba(239, 68, 68, 0.2), 0 8px 10px -6px rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px',
-            animation: 'toastIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both',
-            position: 'relative',
-            overflow: 'hidden'
-        }}>
+        <div
+            onClick={handleToastClick}
+            style={{
+                background: 'rgba(239, 68, 68, 0.95)',
+                color: 'white',
+                padding: '16px 20px',
+                borderRadius: '16px',
+                boxShadow: '0 20px 25px -5px rgba(239, 68, 68, 0.3), 0 8px 10px -6px rgba(239, 68, 68, 0.2)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                backdropFilter: 'blur(8px)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                animation: 'toastIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both',
+                position: 'relative',
+                overflow: 'hidden',
+                cursor: 'pointer'
+            }}
+            title="Click to view & focus emergency on Live Map"
+        >
             {/* Pulsing background glow */}
             <div style={{
                 position: 'absolute',
@@ -107,7 +125,8 @@ function EmergencyToast({ toast, onClose }) {
                 right: 0,
                 bottom: 0,
                 background: 'radial-gradient(circle at center, rgba(255,255,255,0.2) 0%, transparent 70%)',
-                animation: 'pulse 2s infinite'
+                animation: 'pulse 2s infinite',
+                pointerEvents: 'none'
             }} />
 
             <div style={{
@@ -130,22 +149,26 @@ function EmergencyToast({ toast, onClose }) {
 
             <div style={{ flex: 1, zIndex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: '800', letterSpacing: '1px', textTransform: 'uppercase', opacity: 0.9 }}>
-                        Emergency SOS triggered
+                    <span style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '0.8px', textTransform: 'uppercase', opacity: 0.95 }}>
+                        Emergency SOS · Click to Map
                     </span>
                     <button
-                        onClick={onClose}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onClose();
+                        }}
                         style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: '0', display: 'flex' }}
+                        title="Dismiss notification"
                     >
                         <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>close</span>
                     </button>
                 </div>
-                <h4 style={{ margin: '0', fontSize: '16px', fontWeight: 'bold', lineHeight: '1.2' }}>
+                <h4 style={{ margin: '0', fontSize: '15px', fontWeight: 'bold', lineHeight: '1.2' }}>
                     {alert.reporter_name || 'Anonymous User'}
                 </h4>
-                <p style={{ margin: '4px 0 0 0', fontSize: '13px', opacity: 0.9, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>phone</span>
-                    {alert.reporter_phone || 'N/A'}
+                <p style={{ margin: '4px 0 0 0', fontSize: '12px', opacity: 0.95, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>warning</span>
+                    {alert.type || 'Emergency Distress'} {alert.reporter_phone ? `· ${alert.reporter_phone}` : ''}
                 </p>
             </div>
 

@@ -68,19 +68,7 @@ export function Layout() {
     };
   }, [searchContainerRef]);
 
-  // Socket listener to auto-open notifications panel on orchestrator signals
-  useEffect(() => {
-    const socketUrl = import.meta.env.VITE_API_URL || window.location.origin;
-    const socket = io(socketUrl, { transports: ['websocket', 'polling'] });
-
-    socket.on('orchestrator:update', (payload) => {
-      // Auto-open notifications panel when a new dispatch/signal triggers
-      setIsNotificationsOpen(true);
-      // Optional: Add to a global notification array state if you build out the panel more
-    });
-
-    return () => socket.disconnect();
-  }, []);
+  // Keep sidebar closed on incoming signals; user can click the notification bell if desired
 
   const displayName = clerkUser
     ? [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || clerkUser.primaryEmailAddress?.emailAddress || 'Admin User'
