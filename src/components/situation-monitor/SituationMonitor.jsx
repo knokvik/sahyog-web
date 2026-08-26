@@ -137,6 +137,13 @@ function parseLoc(item) {
 // ── NEWS DATA ──
 const NEWS_CHANNELS = [
   {
+    id: 'timesnow',
+    name: 'TIMES NOW',
+    channelId: 'UC6RJ7-PaXg6TIH2BzZfTV7w',
+    url: 'https://www.youtube.com/channel/UC6RJ7-PaXg6TIH2BzZfTV7w',
+    desc: 'Times Now 24/7 Live Emergency News'
+  },
+  {
     id: 'abcnews',
     name: 'ABC NEWS LIVE',
     ytId: 'iipR5yUp36o',
@@ -149,13 +156,6 @@ const NEWS_CHANNELS = [
     ytId: 'XWq5kBlakcQ',
     url: 'https://www.youtube.com/watch?v=XWq5kBlakcQ',
     desc: 'Channel NewsAsia 24-Hour International Live'
-  },
-  {
-    id: 'timesnow',
-    name: 'TIMES NOW',
-    channelId: 'UC6RJ7-PaXg6TIH2BzZfTV7w',
-    url: 'https://www.youtube.com/channel/UC6RJ7-PaXg6TIH2BzZfTV7w',
-    desc: 'Times Now 24/7 Live Emergency News'
   },
   {
     id: 'aljazeera',
@@ -262,7 +262,7 @@ export function SituationMonitor() {
   }, [sosArr, resArr, layers]);
 
   // ── News ──
-  const [activeChannel, setActiveChannel] = useState('abcnews');
+  const [activeChannel, setActiveChannel] = useState('timesnow');
   const currentChannel = NEWS_CHANNELS.find(c => c.id === activeChannel);
 
   // ── AI brief ──
