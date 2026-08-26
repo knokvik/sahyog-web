@@ -72,104 +72,137 @@ function GaugeBar({ label, value, max, unit, color, icon }) {
   );
 }
 
-function ServerStatsPanel() {
-  const { data: stats, isLoading, error } = useServerStats();
+function ActiveDisastersPanel({ disasters }) {
+  const list = Array.isArray(disasters) ? disasters.filter(d => d.status === 'active' || d.status === 'contained') : [];
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardHeader}>
+        <h3 className={styles.sectionTitle}>
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>flood</span>
+          Active Disaster Zones
+        </h3>
+        <a href="/disasters" className={styles.viewAll}>Manage →</a>
+      </div>
+      <div className={styles.zoneList}>
+        {list.length === 0 ? (
+          <div style={{ padding: '16px 8px', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 12 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 24, opacity: 0.4, display: 'block', margin: '0 auto 6px' }}>verified_user</span>
+            All monitored sectors nominal. Zero active disasters.
+          </div>
+        ) : (
+          list.slice(0, 4).map(d => (
+            <div key={d.id} className={styles.zoneItem}>
+              <div className={styles.zoneIcon}>
+                <span className="material-symbols-outlined">{d.type === 'flood' ? 'flood' : d.type === 'earthquake' ? 'landslide' : d.type === 'fire' ? 'local_fire_department' : 'warning'}</span>
+              </div>
+              <div className={styles.zoneInfo}>
+                <div className={styles.zoneTitle}>{d.name || `${d.type} Sector`}</div>
+                <div className={styles.zoneMeta}>
+                  <span>{d.type || 'Hazard'}</span>
+                  <span>•</span>
+                  <span>{d.status || 'active'}</span>
+                </div>
+              </div>
+              <span className={`${styles.zoneSeverity} ${
+                (d.severity >= 8) ? styles.zoneSevCritical :
+                (d.severity >= 5) ? styles.zoneSevElevated : styles.zoneSevNormal
+              }`}>
+                {d.severity ? `Sev ${d.severity}` : 'Active'}
+              </span>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function EmergencyReadinessPanel({ resources, users }) {
+  const resList = Array.isArray(resources) ? resources : [];
+  const userList = Array.isArray(users) ? users : [];
+  const volTotal = userList.filter(u => u.role === 'volunteer').length;
+  const volActive = userList.filter(u => u.role === 'volunteer' && (u.is_active || u.isActive)).length;
+  const volPct = volTotal > 0 ? Math.round((volActive / volTotal) * 100) : 0;
 
   return (
     <div className={styles.card}>
       <div className={styles.cardHeader}>
         <h3 className={styles.sectionTitle}>
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>monitor_heart</span>
-          Server Performance
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>health_and_safety</span>
+          Emergency Readiness
         </h3>
-        <span className={`${styles.liveDot} pulse-green`} title="Auto-refreshing every 5s" />
+        <span className={styles.badge} style={{ background: 'var(--color-primary-10)', color: 'var(--color-primary)' }}>OPERATIONAL</span>
       </div>
-
-      {isLoading && !stats && (
-        <div className={styles.statusBody}>
-          <p className={styles.gaugeLabel} style={{ textAlign: 'center', padding: 16 }}>Loading metrics…</p>
-        </div>
-      )}
-
-      {error && !stats && (
-        <div className={styles.statusBody}>
-          <p style={{ color: '#ef4444', fontSize: 13, padding: 12 }}>Failed to load stats: {error.message}</p>
-        </div>
-      )}
-
-      {stats && (
-        <div className={styles.statusBody}>
-          {/* CPU */}
-          <GaugeBar
-            label="CPU Usage"
-            value={stats.cpu?.usagePercent || 0}
-            max={100}
-            unit="%"
-            icon="speed"
-            color="#3b82f6"
-          />
-
-          {/* Memory */}
-          <GaugeBar
-            label="Memory"
-            value={stats.memory?.usedMB || 0}
-            max={stats.memory?.totalMB || 1}
-            unit=" MB"
-            icon="memory"
-            color="#8b5cf6"
-          />
-
-          {/* Node Heap */}
-          <GaugeBar
-            label="Node Heap"
-            value={stats.process?.heapUsedMB || 0}
-            max={stats.process?.heapTotalMB || 1}
-            unit=" MB"
-            icon="data_object"
-            color="#06b6d4"
-          />
-
-          {/* Load Averages */}
-          <div className={styles.gaugeRow}>
-            <div className={styles.gaugeHeader}>
-              <span className={styles.gaugeLabel}>
-                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>equalizer</span>
-                Load Average
-              </span>
-            </div>
-            <div className={styles.loadAvgRow}>
-              <div className={styles.loadAvgItem}>
-                <span className={styles.loadAvgVal}>{stats.cpu?.loadAvg?.['1m'] ?? '—'}</span>
-                <span className={styles.loadAvgLabel}>1 min</span>
-              </div>
-              <div className={styles.loadAvgItem}>
-                <span className={styles.loadAvgVal}>{stats.cpu?.loadAvg?.['5m'] ?? '—'}</span>
-                <span className={styles.loadAvgLabel}>5 min</span>
-              </div>
-              <div className={styles.loadAvgItem}>
-                <span className={styles.loadAvgVal}>{stats.cpu?.loadAvg?.['15m'] ?? '—'}</span>
-                <span className={styles.loadAvgLabel}>15 min</span>
-              </div>
-            </div>
+      <div className={styles.readinessBody}>
+        <div className={styles.readinessItem}>
+          <div className={styles.readinessHeader}>
+            <span className={styles.readinessLabel}>
+              <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--color-primary)' }}>group</span>
+              Volunteer Squad Readiness
+            </span>
+            <span className={styles.readinessVal}>{volActive}/{volTotal} Ready</span>
           </div>
-
-          {/* System Info Row */}
-          <div className={styles.statusMeta} style={{ marginTop: 8 }}>
-            <div className={styles.statusItem}>
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>schedule</span>
-              <span>Uptime: {formatUptime(stats.system?.uptimeSeconds)}</span>
-            </div>
-            <div className={styles.statusItem}>
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{stats.db?.connected ? 'cloud_done' : 'cloud_off'}</span>
-              <span>DB: {stats.db?.connected ? `Online (${stats.db.totalUsers} users)` : 'Offline'}</span>
-            </div>
-            <div className={styles.statusItem}>
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>terminal</span>
-              <span>Node {stats.system?.nodeVersion}</span>
-            </div>
+          <div className={styles.readinessTrack}>
+            <div className={styles.readinessFill} style={{ width: `${Math.max(volPct, 15)}%`, background: 'var(--color-primary)' }} />
           </div>
         </div>
-      )}
+
+        <div className={styles.readinessItem}>
+          <div className={styles.readinessHeader}>
+            <span className={styles.readinessLabel}>
+              <span className="material-symbols-outlined" style={{ fontSize: 14, color: 'var(--color-info)' }}>inventory_2</span>
+              Relief Supply Hubs
+            </span>
+            <span className={styles.readinessVal}>{resList.length} Deployed</span>
+          </div>
+          <div className={styles.readinessTrack}>
+            <div className={styles.readinessFill} style={{ width: `${Math.min(resList.length * 20, 100)}%`, background: 'var(--color-info)' }} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EmergencyHelplinesPanel() {
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardHeader}>
+        <h3 className={styles.sectionTitle}>
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>emergency</span>
+          Rapid Dispatch & Helplines
+        </h3>
+      </div>
+      <div className={styles.helplineBanner}>
+        <div className={styles.helplineLeft}>
+          <span className="material-symbols-outlined" style={{ color: 'var(--color-danger)', fontSize: 20 }}>call</span>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 11, color: 'var(--color-danger)' }}>NATIONAL DISASTER HOTLINE</div>
+            <div style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>24x7 Emergency Services</div>
+          </div>
+        </div>
+        <a href="tel:112" className={styles.helplineCallBtn}>
+          Dial 112
+        </a>
+      </div>
+      <div className={styles.quickActions} style={{ padding: '0 16px 16px' }}>
+        <a href="/orchestrator" className={styles.quickBtn}>
+          <span className="material-symbols-outlined" style={{ color: 'var(--color-primary)' }}>cell_tower</span>
+          <span>AI Orchestrator</span>
+        </a>
+        <a href="/map" className={styles.quickBtn}>
+          <span className="material-symbols-outlined" style={{ color: 'var(--color-info)' }}>map</span>
+          <span>2D/3D Live Map</span>
+        </a>
+        <a href="/needs" className={styles.quickBtn}>
+          <span className="material-symbols-outlined" style={{ color: 'var(--color-danger)' }}>sos</span>
+          <span>Needs & SOS</span>
+        </a>
+        <a href="/relief" className={styles.quickBtn}>
+          <span className="material-symbols-outlined" style={{ color: 'var(--color-warning)' }}>volunteer_activism</span>
+          <span>NGO Requests</span>
+        </a>
+      </div>
     </div>
   );
 }
@@ -256,7 +289,7 @@ export function Dashboard() {
             </div>
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', padding: '0 20px 20px' }}>
               {assignments.map(a => (
-                <div key={a.id} style={{ background: '#fff', padding: 16, borderRadius: 12, border: '1px solid var(--color-border)', flex: '1 1 300px' }}>
+                <div key={a.id} style={{ background: 'var(--color-surface)', padding: 16, borderRadius: 12, border: '1px solid var(--color-border)', flex: '1 1 300px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                     <h4 style={{ margin: 0, fontSize: 15, color: 'var(--color-text-primary)' }}>{a.disaster_name}</h4>
                     <StatusBadge status={a.status} />
@@ -290,7 +323,7 @@ export function Dashboard() {
           <div className={styles.cardHeader}>
             <h3 className={styles.sectionTitle}>
               <span className="material-symbols-outlined" style={{ fontSize: 16 }}>sos</span>
-              Recent Needs
+              Recent Needs & Distress Signals
             </h3>
             <a href="/needs" className={styles.viewAll}>View All →</a>
           </div>
@@ -314,7 +347,7 @@ export function Dashboard() {
                     </td>
                   </tr>
                 ) : (
-                  needsArr.slice(0, 5).map(row => (
+                  needsArr.slice(0, 6).map(row => (
                     <tr key={row.id}>
                       <td><code className={styles.mono}>#{row.id?.slice(0, 8)}</code></td>
                       <td><StatusBadge status={row.status} /></td>
@@ -329,56 +362,16 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* Side Panel */}
+        {/* Side Panel: Active Zones, Readiness, and Helplines */}
         <div className={styles.sidePanel}>
-          {/* Server Performance (Live) */}
-          <ServerStatsPanel />
+          {/* Active Disaster Zones */}
+          <ActiveDisastersPanel disasters={disArr} />
 
-          {/* Profile */}
-          <div className={styles.card}>
-            <div className={styles.cardHeader}>
-              <h3 className={styles.sectionTitle}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>person</span>
-                Your Profile
-              </h3>
-            </div>
-            <dl className={styles.profileDl}>
-              <dt>Email</dt>
-              <dd>{profile?.email ?? me?.email ?? '—'}</dd>
-              <dt>Role</dt>
-              <dd><code className={styles.roleCode}>{profile?.role ?? me?.role ?? '—'}</code></dd>
-              <dt>User ID</dt>
-              <dd><code className={styles.idMono}>{(profile?.id ?? me?.id ?? '—').slice(0, 20)}…</code></dd>
-            </dl>
-          </div>
+          {/* Emergency Readiness */}
+          <EmergencyReadinessPanel resources={resArr} users={usersArr} />
 
-          {/* Quick Actions */}
-          <div className={styles.card}>
-            <div className={styles.cardHeader}>
-              <h3 className={styles.sectionTitle}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>bolt</span>
-                Quick Actions
-              </h3>
-            </div>
-            <div className={styles.quickActions}>
-              <a href="/needs" className={styles.quickBtn}>
-                <span className="material-symbols-outlined">sos</span>
-                <span>Needs / SOS</span>
-              </a>
-              <a href="/disasters" className={styles.quickBtn}>
-                <span className="material-symbols-outlined">flood</span>
-                <span>Disasters</span>
-              </a>
-              <a href="/users" className={styles.quickBtn}>
-                <span className="material-symbols-outlined">group</span>
-                <span>Users</span>
-              </a>
-              <a href="/resources" className={styles.quickBtn}>
-                <span className="material-symbols-outlined">night_shelter</span>
-                <span>Resources</span>
-              </a>
-            </div>
-          </div>
+          {/* Helplines & Fast Actions */}
+          <EmergencyHelplinesPanel />
         </div>
       </div>
     </div>

@@ -185,15 +185,22 @@ a:hover {
 }
 
 /* Leaflet Dark Mode Support */
-[data-theme="dark"] .leaflet-layer,
-[data-theme="dark"] .leaflet-control-zoom-in,
-[data-theme="dark"] .leaflet-control-zoom-out,
-[data-theme="dark"] .leaflet-control-attribution {
-  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+[data-theme="dark"] .leaflet-container {
+  background: #0a0e17 !important;
 }
 
-[data-theme="dark"] .leaflet-container {
-  background: #1a1a1a !important;
+[data-theme="dark"] .leaflet-popup-content-wrapper,
+[data-theme="dark"] .leaflet-popup-tip {
+  background: #111827;
+  color: #f8fafc;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .leaflet-control-zoom a {
+  background: #111827 !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
 }
 
 /* Animations */

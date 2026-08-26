@@ -384,78 +384,168 @@
   font-family: 'SF Mono', 'Fira Code', monospace;
 }
 
-/* ── Load Average ── */
-.loadAvgRow {
+/* ── Operational Zones Panel ── */
+.zoneList {
+  padding: 8px 16px 16px;
   display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
-.loadAvgItem {
-  flex: 1;
+.zoneItem {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 8px 6px;
+  gap: 12px;
+  padding: 10px 12px;
   background: var(--color-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+}
+
+.zoneItem:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border);
+}
+
+.zoneIcon {
+  width: 32px;
+  height: 32px;
   border-radius: var(--radius-md);
-}
-
-.loadAvgVal {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--color-warning);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   font-size: 16px;
-  font-weight: 800;
-  color: var(--color-text-primary);
-  font-family: 'SF Mono', 'Fira Code', monospace;
 }
 
-.loadAvgLabel {
+.zoneInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.zoneTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.zoneMeta {
   font-size: 10px;
-  font-weight: 600;
   color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.zoneSeverity {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-/* Profile */
-.profileDl {
-  margin: 0;
-  padding: 16px 20px;
+.zoneSevCritical {
+  background: var(--badge-red-bg);
+  color: var(--badge-red-fg);
 }
 
-.profileDl dt {
-  font-size: 10px;
+.zoneSevElevated {
+  background: var(--badge-amber-bg);
+  color: var(--badge-amber-fg);
+}
+
+.zoneSevNormal {
+  background: var(--badge-blue-bg);
+  color: var(--badge-blue-fg);
+}
+
+/* ── Readiness Panel ── */
+.readinessBody {
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.readinessItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.readinessHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+
+.readinessLabel {
   font-weight: 700;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-  letter-spacing: 0.8px;
-  margin-top: 10px;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-.profileDl dt:first-child {
-  margin-top: 0;
-}
-
-.profileDl dd {
-  margin: 3px 0 0;
-  font-size: 13px;
-  font-weight: 600;
+.readinessVal {
+  font-weight: 800;
+  font-family: 'SF Mono', 'Fira Code', monospace;
   color: var(--color-text-primary);
 }
 
-.roleCode {
-  font-family: 'SF Mono', 'Fira Code', monospace;
-  font-size: 12px;
-  background: var(--color-primary-10);
-  color: var(--color-primary-dark);
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
+.readinessTrack {
+  width: 100%;
+  height: 6px;
+  background: var(--color-bg);
+  border-radius: 3px;
+  overflow: hidden;
 }
 
-.idMono {
-  font-family: 'SF Mono', 'Fira Code', monospace;
+.readinessFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+/* ── Helplines & Actions ── */
+.helplineBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  margin: 0 16px 12px;
+  background: var(--color-danger-10);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-lg);
+}
+
+.helplineLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.helplineCallBtn {
   font-size: 11px;
-  color: var(--color-text-muted);
-  word-break: break-all;
+  font-weight: 800;
+  color: #fff;
+  background: var(--color-danger);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* Quick Actions */
