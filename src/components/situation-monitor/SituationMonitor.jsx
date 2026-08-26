@@ -136,10 +136,10 @@ function parseLoc(item) {
 
 // ── NEWS DATA ──
 const NEWS_CHANNELS = [
-  { id: 'ddnews', name: 'DD NEWS', ytId: 'sLBMgJE3VPM', url: 'https://www.youtube.com/watch?v=sLBMgJE3VPM', desc: 'Doordarshan National 24x7' },
-  { id: 'skynews', name: 'SKY NEWS', ytId: '9Auq9mYxFEE', url: 'https://www.youtube.com/watch?v=9Auq9mYxFEE', desc: 'Sky News Crisis Alert' },
-  { id: 'aljazeera', name: 'AL JAZEERA', ytId: 'bNyUyrR0PHo', url: 'https://www.youtube.com/watch?v=bNyUyrR0PHo', desc: 'Al Jazeera Global English' },
-  { id: 'aajtak', name: 'AAJ TAK', ytId: 'f0xP4_2K8g4', url: 'https://www.youtube.com/watch?v=f0xP4_2K8g4', desc: 'Breaking Emergency News' },
+  { id: 'ddnews', name: 'DD NEWS', channelId: 'UC5_6B0Q_fS36oXgQ_6f4Q5g', ytId: 'sLBMgJE3VPM', url: 'https://www.youtube.com/watch?v=sLBMgJE3VPM', desc: 'Doordarshan National 24x7 Emergency Feed' },
+  { id: 'skynews', name: 'SKY NEWS', channelId: 'UC6ZFN9Tx6xh-skXCuRHCDpQ', ytId: '9Auq9mYxFEE', url: 'https://www.youtube.com/watch?v=9Auq9mYxFEE', desc: 'Sky News 24/7 Global Live' },
+  { id: 'aljazeera', name: 'AL JAZEERA', channelId: 'UCNye-wNBqNL5ZzHSJj3l8Bg', ytId: 'bNyUyrR0PHo', url: 'https://www.youtube.com/watch?v=bNyUyrR0PHo', desc: 'Al Jazeera Global English Live' },
+  { id: 'aajtak', name: 'AAJ TAK', channelId: 'UCt4t-jeY85JegMlZ-E5UWtA', ytId: 'f0xP4_2K8g4', url: 'https://www.youtube.com/watch?v=f0xP4_2K8g4', desc: 'Breaking Emergency Hindi Feed' },
   { id: 'imd', name: 'IMD RADAR', type: 'weather', url: 'https://mausam.imd.gov.in/', desc: 'India Meteorological Doppler Radar' },
   { id: 'ndma', name: 'NDMA ADVISORY', type: 'advisory', url: 'https://ndma.gov.in/', desc: 'National Disaster Guidelines' },
 ];
@@ -219,7 +219,6 @@ export function SituationMonitor() {
 
   // ── News ──
   const [activeChannel, setActiveChannel] = useState('ddnews');
-  const [embedMode, setEmbedMode] = useState(false);
   const currentChannel = NEWS_CHANNELS.find(c => c.id === activeChannel);
 
   // ── AI brief ──
@@ -601,65 +600,48 @@ export function SituationMonitor() {
                     Open NDMA Portal ↗
                   </a>
                 </div>
-              ) : embedMode && currentChannel?.ytId ? (
+              ) : (
                 <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                   <iframe
-                    src={`https://www.youtube-nocookie.com/embed/${currentChannel.ytId}?autoplay=1&mute=1&controls=1&rel=0`}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    src={currentChannel?.channelId
+                      ? `https://www.youtube.com/embed/live_stream?channel=${currentChannel.channelId}&autoplay=1&mute=1&modestbranding=1&rel=0`
+                      : `https://www.youtube.com/embed/${currentChannel?.ytId}?autoplay=1&mute=1&modestbranding=1&rel=0`
+                    }
+                    title={`${currentChannel?.name} 24/7 Live Stream`}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     allowFullScreen
-                    referrerPolicy="no-referrer"
-                    title={currentChannel.name}
                     style={{ width: '100%', height: '100%', border: 'none' }}
                   />
-                  <button
-                    onClick={() => setEmbedMode(false)}
-                    style={{
-                      position: 'absolute',
-                      top: 6,
-                      right: 6,
-                      background: 'rgba(0,0,0,0.7)',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 4,
-                      padding: '2px 6px',
-                      fontSize: 10,
-                      cursor: 'pointer',
-                      zIndex: 10
-                    }}
-                  >
-                    Close Embed
-                  </button>
-                </div>
-              ) : (
-                <div className={styles.newsPlayerOverlay}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span className={styles.deckLiveDot} />
-                    <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--color-danger)', letterSpacing: 0.8 }}>ON AIR • 24/7 LIVE</span>
-                  </div>
-                  <div style={{ fontWeight: 800, fontSize: 13, color: 'var(--color-text-primary)' }}>{currentChannel?.name} Broadcast</div>
-                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{currentChannel?.desc || 'Live Disaster & Emergency Stream'}</div>
-                  <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                  <div style={{
+                    position: 'absolute',
+                    bottom: 6,
+                    right: 6,
+                    zIndex: 10,
+                    display: 'flex',
+                    gap: 6
+                  }}>
                     {currentChannel?.url && (
-                      <a href={currentChannel.url} target="_blank" rel="noreferrer" className={styles.newsLiveAction}>
-                        ▶ Watch Live Stream ↗
-                      </a>
-                    )}
-                    {currentChannel?.ytId && (
-                      <button
-                        onClick={() => setEmbedMode(true)}
+                      <a
+                        href={currentChannel.url}
+                        target="_blank"
+                        rel="noreferrer"
                         style={{
-                          fontSize: 11,
+                          fontSize: 10,
                           fontWeight: 700,
-                          color: 'var(--color-text-secondary)',
-                          background: 'var(--color-bg)',
-                          border: '1px solid var(--color-border)',
-                          padding: '4px 10px',
-                          borderRadius: 'var(--radius-full)',
-                          cursor: 'pointer'
+                          color: '#fff',
+                          background: 'rgba(0,0,0,0.75)',
+                          backdropFilter: 'blur(4px)',
+                          padding: '3px 8px',
+                          borderRadius: 4,
+                          textDecoration: 'none',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 3
                         }}
                       >
-                        Embed Player
-                      </button>
+                        Pop-out ↗
+                      </a>
                     )}
                   </div>
                 </div>
