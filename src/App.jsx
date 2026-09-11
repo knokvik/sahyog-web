@@ -36,6 +36,8 @@ import { EscalationsPage } from './pages/command-center/EscalationsPage';
 import { DeploymentMapPage } from './pages/command-center/DeploymentMapPage';
 import { CoordinatorAnalyticsPage } from './pages/command-center/CoordinatorAnalyticsPage';
 import { ReportsPage } from './pages/command-center/ReportsPage';
+import AdminAuditLogs from './pages/AdminAuditLogs';
+import { OrgActivityLog } from './pages/org/OrgActivityLog';
 
 
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || import.meta.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -132,6 +134,7 @@ function AppRoutes() {
         <Route path="map" element={<DeploymentMapPage />} />
         <Route path="live-map" element={<Navigate to="/map" replace />} />
         <Route path="server" element={<ServerMonitor />} />
+        <Route path="audit-logs" element={<AdminAuditLogs />} />
       </Route>
 
       {/* Organization Onboarding — open to any authenticated user */}
@@ -160,6 +163,7 @@ function AppRoutes() {
         <Route path="tasks" element={<OrgTasks />} />
         <Route path="zones" element={<OrgZones />} />
         <Route path="profile" element={<OrgProfile />} />
+        <Route path="activity-log" element={<OrgActivityLog />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

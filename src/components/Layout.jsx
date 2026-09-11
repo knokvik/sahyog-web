@@ -39,6 +39,7 @@ const navSections = [
     title: 'SYSTEM & ADMIN',
     items: [
       { to: '/users', label: 'User Management', icon: 'admin_panel_settings' },
+      { to: '/audit-logs', label: 'Audit Logs', icon: 'history' },
       { to: '/server', label: 'Server Monitor', icon: 'monitor_heart' },
     ]
   }

@@ -131,6 +131,7 @@ function ZoneMapTab({ disasterId, onOpenModal }) {
   const [clickCenter, setClickCenter] = useState(null);
   const [radius, setRadius] = useState(500);
   const [zoneName, setZoneName] = useState('');
+  const [autoAiEnabled, setAutoAiEnabled] = useState(true);
 
   const sosIcon = L.divIcon({
     className: 'sos-radar-blip-container',
@@ -159,6 +160,7 @@ function ZoneMapTab({ disasterId, onOpenModal }) {
       center_lng: clickCenter.lng,
       center_lat: clickCenter.lat,
       radius_meters: radius,
+      auto_ai: autoAiEnabled,
     }, {
       onSuccess: () => { 
         setClickCenter(null); 
@@ -283,6 +285,23 @@ function ZoneMapTab({ disasterId, onOpenModal }) {
               <input type="range" min={100} max={5000} step={100} value={radius} onChange={e => setRadius(+e.target.value)}
                 style={{ width: '100%', accentColor: 'var(--color-primary)' }} />
             </div>
+            
+            {/* AI Auto-Orchestration Toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: autoAiEnabled ? 'var(--color-primary-10)' : 'var(--color-surface)', border: `1px solid ${autoAiEnabled ? 'var(--color-primary)' : 'var(--color-border)'}`, borderRadius: 8, cursor: 'pointer', transition: 'all 0.2s' }} onClick={() => setAutoAiEnabled(!autoAiEnabled)}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span className="material-symbols-outlined" style={{ color: autoAiEnabled ? 'var(--color-primary)' : 'var(--color-text-muted)', fontSize: 20 }}>
+                  smart_toy
+                </span>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: autoAiEnabled ? 'var(--color-primary)' : 'var(--color-text-primary)' }}>AI Auto-Orchestrator</span>
+                  <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{autoAiEnabled ? 'Automated dispatch enabled' : 'Manual dispatch only'}</span>
+                </div>
+              </div>
+              <div style={{ width: 36, height: 20, borderRadius: 10, background: autoAiEnabled ? 'var(--color-primary)' : '#cbd5e1', position: 'relative', transition: 'all 0.2s' }}>
+                <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'white', position: 'absolute', top: 2, left: autoAiEnabled ? 18 : 2, transition: 'all 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }} />
+              </div>
+            </div>
+
             <div style={{ padding: '8px 12px', background: 'var(--color-info-10)', borderRadius: 8, color: 'var(--color-info)', fontSize: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
               <span className="material-symbols-outlined" style={{ fontSize: 16 }}>touch_app</span>
               Click anywhere on the map to place the zone.
