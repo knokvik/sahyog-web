@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useRealtime } from '../components/RealtimeProvider';
 import { useDisastersList, useSosList, useUsersList } from '../api/hooks';
 import {
   useReliefZones, useCreateZone, useDeleteZone,
@@ -74,6 +75,56 @@ function ZoneMapTab({ disasterId, onOpenModal }) {
   const createZone = useCreateZone(disasterId);
   const deleteZone = useDeleteZone(disasterId);
   const [deleteError, setDeleteError] = useState(null);
+  const { socket } = useRealtime();
+  const [aiProgress, setAiProgress] = useState(null);
+  const [orgSequenceProgress, setOrgSequenceProgress] = useState(null);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handleProgress = (data) => {
+      setAiProgress(prev => {
+        const curr = prev?.zoneId === data.zoneId ? { ...prev } : { zoneId: data.zoneId, items: [], orgs: [] };
+        curr.stage = data.stage;
+        if (data.items) curr.items = data.items;
+        if (data.orgs) curr.orgs = data.orgs;
+        if (data.message) curr.message = data.message;
+        return curr;
+      });
+    };
+    
+    const handleOrgProgress = (data) => {
+      setOrgSequenceProgress(prev => {
+        const curr = prev?.requestId === data.requestId ? { ...prev } : { requestId: data.requestId, logs: [] };
+        curr.currentOrg = data.org_name;
+        curr.stage = data.stage;
+        curr.message = data.message;
+        
+        if (data.stage === 'ALLOCATED' || data.stage === 'SKIPPED') {
+            curr.logs = [...(curr.logs || []), {
+                org: data.org_name,
+                stage: data.stage,
+                message: data.message,
+                contributions: data.contributions
+            }];
+        }
+        
+        // Store fulfillment summary when sequence ends
+        if (data.stage === 'COMPLETED' || data.stage === 'EXHAUSTED') {
+            curr.fulfilled = data.fulfilled;
+            curr.summary = data.summary;
+        }
+        
+        return curr;
+      });
+    };
+    
+    socket.on('ai_agent_progress', handleProgress);
+    socket.on('org_agent_progress', handleOrgProgress);
+    return () => {
+        socket.off('ai_agent_progress', handleProgress);
+        socket.off('org_agent_progress', handleOrgProgress);
+    };
+  }, [socket]);
 
   const [drawing, setDrawing] = useState(false);
   const [severity, setSeverity] = useState('red');
@@ -109,7 +160,18 @@ function ZoneMapTab({ disasterId, onOpenModal }) {
       center_lat: clickCenter.lat,
       radius_meters: radius,
     }, {
-      onSuccess: () => { setClickCenter(null); setZoneName(''); setDrawing(false); },
+      onSuccess: () => { 
+        setClickCenter(null); 
+        setZoneName(''); 
+        setDrawing(false); 
+      },
+      onError: (err) => {
+        if (err.status === 409) {
+          alert('Request already active, help is on the way');
+        } else {
+          alert(err.message || 'Failed to create zone');
+        }
+      }
     });
   };
 
@@ -240,7 +302,7 @@ function ZoneMapTab({ disasterId, onOpenModal }) {
           </button>
 
           <button onClick={() => onOpenModal('request')}
-            title="Send Request"
+            title="Manual Override Request"
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', width: 48, height: 48, borderRadius: '50%',
               background: 'var(--color-surface)', color: 'var(--color-primary)', border: '1px solid var(--color-border)',
@@ -366,6 +428,212 @@ function ZoneMapTab({ disasterId, onOpenModal }) {
           </div>
         )}
       </div>
+
+      {/* AI Progress Tracker Modal (Initial Dispatch) */}
+      {aiProgress && (
+        <div style={{
+          position: 'absolute', top: 24, right: 24, zIndex: 1000,
+          background: 'var(--color-surface)', width: 320, borderRadius: 12,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.15)', border: '1px solid var(--color-border)',
+          overflow: 'hidden', animation: 'slideInRight 0.3s ease'
+        }}>
+          <div style={{ background: 'var(--color-primary-10)', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span className="material-symbols-outlined" style={{ color: 'var(--color-primary)', fontSize: 20 }}>smart_toy</span>
+              <h4 style={{ margin: 0, fontSize: 14, color: 'var(--color-primary)' }}>AI Agent Tracking</h4>
+            </div>
+            <button onClick={() => setAiProgress(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+            </button>
+          </div>
+          <div style={{ padding: 16 }}>
+            {/* Step 1: Requirements */}
+            <div style={{ display: 'flex', gap: 12, marginBottom: 16, position: 'relative' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 20, color: ['REQUIREMENTS_DONE', 'NGO_SELECTION_DONE', 'COMPLETED'].includes(aiProgress.stage) ? 'var(--color-primary)' : aiProgress.stage === 'ERROR' ? 'var(--color-danger)' : 'var(--color-text-muted)' }}>
+                  {['REQUIREMENTS_DONE', 'NGO_SELECTION_DONE', 'COMPLETED'].includes(aiProgress.stage) ? 'check_circle' : aiProgress.stage === 'ERROR' ? 'error' : 'radio_button_unchecked'}
+                </span>
+                <div style={{ width: 2, height: 24, background: 'var(--color-border)', margin: '4px 0' }} />
+              </div>
+              <div style={{ flex: 1 }} className="group">
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>Assessing Requirements</span>
+                {aiProgress.stage === 'STARTING' && <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--color-text-muted)' }}>{aiProgress.message}</p>}
+                {aiProgress.stage === 'ERROR' && aiProgress.step === 'REQUIREMENTS' && <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--color-danger)' }}>{aiProgress.message}</p>}
+                {aiProgress.items?.length > 0 && (
+                  <div style={{ marginTop: 4, padding: 8, background: 'var(--color-bg)', borderRadius: 6, fontSize: 11, color: 'var(--color-text-secondary)', display: 'none', position: 'absolute', zIndex: 10, width: '100%', left: 0, top: 24, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} className="group-hover-show">
+                    <strong>Generated Resources:</strong>
+                    <ul style={{ margin: '4px 0 0', paddingLeft: 16 }}>
+                      {aiProgress.items.map((it, i) => <li key={i}>{it.quantity_needed}x {it.resource_type}</li>)}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Step 2: NGOs */}
+            <div style={{ display: 'flex', gap: 12, marginBottom: 16, position: 'relative' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 20, color: ['NGO_SELECTION_DONE', 'COMPLETED'].includes(aiProgress.stage) ? 'var(--color-primary)' : aiProgress.stage === 'ERROR' ? 'var(--color-danger)' : 'var(--color-text-muted)' }}>
+                  {['NGO_SELECTION_DONE', 'COMPLETED'].includes(aiProgress.stage) ? 'check_circle' : 'radio_button_unchecked'}
+                </span>
+                <div style={{ width: 2, height: 24, background: 'var(--color-border)', margin: '4px 0' }} />
+              </div>
+              <div style={{ flex: 1 }} className="group">
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>Selecting Organizations</span>
+                {aiProgress.stage === 'ERROR' && aiProgress.step === 'NGOS' && <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--color-danger)' }}>{aiProgress.message}</p>}
+                {aiProgress.orgs?.length > 0 && (
+                  <div style={{ marginTop: 4, padding: 8, background: 'var(--color-bg)', borderRadius: 6, fontSize: 11, color: 'var(--color-text-secondary)', display: 'none', position: 'absolute', zIndex: 10, width: '100%', left: 0, top: 24, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} className="group-hover-show">
+                    <strong>Selected NGOs ({aiProgress.orgs.length}):</strong>
+                    <ul style={{ margin: '4px 0 0', paddingLeft: 16 }}>
+                      {aiProgress.orgs.slice(0, 5).map((o, i) => <li key={i}>{o.name}</li>)}
+                      {aiProgress.orgs.length > 5 && <li>...and {aiProgress.orgs.length - 5} more</li>}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Step 3: Dispatch */}
+            <div style={{ display: 'flex', gap: 12, position: 'relative' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 20, color: aiProgress.stage === 'COMPLETED' ? 'var(--color-primary)' : aiProgress.stage === 'ERROR' ? 'var(--color-danger)' : 'var(--color-text-muted)' }}>
+                  {aiProgress.stage === 'COMPLETED' ? 'check_circle' : 'radio_button_unchecked'}
+                </span>
+              </div>
+              <div style={{ flex: 1 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>Dispatching Requests</span>
+                {aiProgress.stage === 'COMPLETED' && <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--color-primary)' }}>{aiProgress.message}</p>}
+                {aiProgress.stage === 'ERROR' && aiProgress.step === 'DISPATCH' && <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--color-danger)' }}>{aiProgress.message}</p>}
+              </div>
+            </div>
+            
+            <style dangerouslySetInnerHTML={{ __html: `
+              .group:hover .group-hover-show { display: block !important; }
+              @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+              }
+            `}} />
+          </div>
+        </div>
+      )}
+
+      {/* Multi-Agent Sequence Tracker (Admin side) */}
+      {orgSequenceProgress && (
+        <div style={{
+          position: 'absolute', top: aiProgress ? 340 : 24, right: 24, zIndex: 1000,
+          background: 'var(--color-surface)', width: 360, borderRadius: 12,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.15)', border: '1px solid var(--color-border)',
+          overflow: 'hidden', animation: 'slideInRight 0.3s ease'
+        }}>
+          <div style={{
+            background: orgSequenceProgress.stage === 'COMPLETED' ? '#f0fdf4' : orgSequenceProgress.stage === 'EXHAUSTED' ? '#fffbeb' : '#f8fafc',
+            padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            borderBottom: '1px solid var(--color-border)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span className="material-symbols-outlined" style={{
+                color: orgSequenceProgress.stage === 'COMPLETED' ? '#10b981' : orgSequenceProgress.stage === 'EXHAUSTED' ? '#f59e0b' : '#6366f1',
+                fontSize: 20
+              }}>
+                {orgSequenceProgress.stage === 'COMPLETED' ? 'verified' : orgSequenceProgress.stage === 'EXHAUSTED' ? 'warning' : 'precision_manufacturing'}
+              </span>
+              <h4 style={{ margin: 0, fontSize: 14, color: orgSequenceProgress.stage === 'COMPLETED' ? '#15803d' : orgSequenceProgress.stage === 'EXHAUSTED' ? '#92400e' : '#4338ca' }}>
+                {orgSequenceProgress.stage === 'COMPLETED' ? 'Allocation Complete' : orgSequenceProgress.stage === 'EXHAUSTED' ? 'Partially Fulfilled' : 'Multi-Agent Allocation'}
+              </h4>
+            </div>
+            <button onClick={() => setOrgSequenceProgress(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+            </button>
+          </div>
+          
+          <div style={{ padding: 16, maxHeight: 400, overflowY: 'auto' }}>
+            {/* Current Activity / Final Status */}
+            <div style={{ marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {orgSequenceProgress.stage === 'COMPLETED' ? (
+                  <span className="material-symbols-outlined" style={{ color: '#10b981', fontSize: 18 }}>check_circle</span>
+                ) : orgSequenceProgress.stage === 'EXHAUSTED' ? (
+                  <span className="material-symbols-outlined" style={{ color: '#f59e0b', fontSize: 18 }}>info</span>
+                ) : (
+                  <div style={{ width: 12, height: 12, border: '2px solid #6366f1', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                )}
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#1e293b' }}>
+                  {orgSequenceProgress.stage === 'COMPLETED'
+                    ? 'All resources fulfilled!'
+                    : orgSequenceProgress.stage === 'EXHAUSTED'
+                    ? 'All organizations processed'
+                    : `Agent working on ${orgSequenceProgress.currentOrg || '...'}`}
+                </span>
+              </div>
+              {orgSequenceProgress.message && (
+                <div style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>
+                  {orgSequenceProgress.message}
+                </div>
+              )}
+            </div>
+
+            {/* Fulfillment Summary (shown on COMPLETED/EXHAUSTED) */}
+            {orgSequenceProgress.summary && orgSequenceProgress.summary.length > 0 && (
+              <div style={{ marginBottom: 12, padding: 10, borderRadius: 8, background: orgSequenceProgress.fulfilled ? '#f0fdf4' : '#fffbeb', border: `1px solid ${orgSequenceProgress.fulfilled ? '#bbf7d0' : '#fde68a'}` }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Fulfillment Summary</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
+                  {orgSequenceProgress.summary.map((item, i) => {
+                    const pct = Math.min(100, Math.round((item.fulfilled / item.needed) * 100));
+                    return (
+                      <div key={i}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 2 }}>
+                          <span style={{ fontWeight: 600, color: '#334155' }}>{item.resource_type}</span>
+                          <span style={{ color: pct >= 100 ? '#15803d' : '#92400e', fontWeight: 700 }}>{item.fulfilled}/{item.needed}</span>
+                        </div>
+                        <div style={{ height: 4, background: '#e2e8f0', borderRadius: 2, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: pct >= 100 ? '#10b981' : '#f59e0b', borderRadius: 2, transition: 'width 0.5s ease' }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Allocation History */}
+            {orgSequenceProgress.logs && orgSequenceProgress.logs.length > 0 && (
+              <div>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Allocation History</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                  {orgSequenceProgress.logs.map((log, i) => (
+                    <div key={i} style={{ 
+                      padding: 10, borderRadius: 8, 
+                      background: log.stage === 'SKIPPED' ? '#f1f5f9' : '#f0fdf4',
+                      border: `1px solid ${log.stage === 'SKIPPED' ? '#e2e8f0' : '#bbf7d0'}`
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#334155' }}>{log.org || 'Unknown Org'}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: log.stage === 'SKIPPED' ? '#64748b' : '#15803d' }}>
+                          {log.stage}
+                        </span>
+                      </div>
+                      {log.contributions && log.contributions.length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                          {log.contributions.map((c, j) => (
+                            <span key={j} style={{ fontSize: 10, background: '#dcfce7', color: '#166534', padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>
+                              {c.quantity}x {c.resource_type}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <style dangerouslySetInnerHTML={{ __html: `
+              @keyframes spin { 100% { transform: rotate(360deg); } }
+            `}} />
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

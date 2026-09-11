@@ -73,6 +73,17 @@ export function useUpdateOrg() {
     });
 }
 
+export function useUpdateAiPreference() {
+    const { getToken } = useAuth();
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (ai_allocation_preference) => apiRequest(`${apiPaths.orgMe}/ai-preference`, {
+            method: 'PUT', body: JSON.stringify({ ai_allocation_preference }),
+        }, getToken),
+        onSuccess: () => { qc.invalidateQueries({ queryKey: ['org-profile'] }); },
+    });
+}
+
 export function useLinkVolunteer() {
     const { getToken } = useAuth();
     const qc = useQueryClient();

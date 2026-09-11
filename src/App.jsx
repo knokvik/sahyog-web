@@ -504,13 +504,13 @@ export default function App() {
     >
       <Provider store={store}>
         <QueryClientProvider client={queryClient}>
-          <RealtimeProvider>
-            <ErrorBoundary>
-              <BrowserRouter>
+          <ErrorBoundary>
+            <BrowserRouter>
+              <RealtimeProvider>
                 <AppRoutes />
-              </BrowserRouter>
-            </ErrorBoundary>
-          </RealtimeProvider>
+              </RealtimeProvider>
+            </BrowserRouter>
+          </ErrorBoundary>
         </QueryClientProvider>
       </Provider>
     </ClerkProvider>

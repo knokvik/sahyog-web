@@ -44,22 +44,25 @@ export function OrgProfile() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
           <h1 className={s.pageTitleSm}>Organization Profile</h1>
           <p className={s.pageDesc}>View and update your organization details.</p>
         </div>
-        <button
-          onClick={() => setEditing(!editing)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px',
-            background: editing ? '#64748b' : '#34b27b', color: '#fff', border: 'none',
-            borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-          }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{editing ? 'close' : 'edit'}</span>
-          {editing ? 'Cancel' : 'Edit'}
-        </button>
+        
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <button
+            onClick={() => setEditing(!editing)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px',
+              background: editing ? '#64748b' : '#34b27b', color: '#fff', border: 'none',
+              borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', height: 'fit-content'
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{editing ? 'close' : 'edit'}</span>
+            {editing ? 'Cancel' : 'Edit'}
+          </button>
+        </div>
       </div>
 
       <div className={s.formCard} style={{ padding: 32 }}>

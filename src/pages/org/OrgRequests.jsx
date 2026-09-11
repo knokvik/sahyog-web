@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { useOrgRequests, useAcceptOrgRequest, useRejectOrgRequest, useAssignCoordinator, useOrgVolunteers } from '../../api/useOrg';
+import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useOrgRequests, useAcceptOrgRequest, useRejectOrgRequest, useAssignCoordinator, useOrgVolunteers, useOrgProfile, useUpdateAiPreference } from '../../api/useOrg';
+import { useRealtime } from '../../components/RealtimeProvider';
 import s from './Org.module.css';
 
 const STATUS_COLORS = {
@@ -7,6 +9,9 @@ const STATUS_COLORS = {
   accepted: { bg: 'var(--badge-green-bg)', fg: 'var(--badge-green-fg)' },
   rejected: { bg: 'var(--badge-red-bg)', fg: 'var(--badge-red-fg)' },
   cancelled: { bg: 'var(--badge-muted-bg)', fg: 'var(--badge-muted-fg)' },
+  active: { bg: '#dbeafe', fg: '#1d4ed8' },
+  allocated: { bg: '#dcfce7', fg: '#15803d' },
+  skipped: { bg: '#f1f5f9', fg: '#475569' }
 };
 
 function formatTime(d) {
@@ -195,6 +200,39 @@ export function OrgRequests() {
   const acceptMutation = useAcceptOrgRequest();
   const rejectMutation = useRejectOrgRequest();
   const coordMutation = useAssignCoordinator();
+  const qc = useQueryClient();
+  const { socket } = useRealtime();
+
+  const [agentProgress, setAgentProgress] = useState(null);
+  const [allocationHistory, setAllocationHistory] = useState([]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handleProgress = (data) => {
+      // Always update the live status
+      setAgentProgress(data);
+
+      // Accumulate milestone events into persistent history
+      if (data.stage === 'ALLOCATED' || data.stage === 'SKIPPED') {
+        setAllocationHistory(prev => [...prev, {
+          org_name: data.org_name || 'Organization',
+          stage: data.stage,
+          message: data.message,
+          contributions: data.contributions,
+          timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+        }]);
+        qc.invalidateQueries({ queryKey: ['org-requests'] });
+      }
+
+      // On completion, keep modal visible (no auto-dismiss)
+      if (data.stage === 'COMPLETED' || data.stage === 'EXHAUSTED') {
+        qc.invalidateQueries({ queryKey: ['org-requests'] });
+      }
+    };
+    socket.on('org_agent_progress', handleProgress);
+    return () => socket.off('org_agent_progress', handleProgress);
+  }, [socket, qc]);
+
 
   const handleAccept = (assignmentId, contributions) => {
     acceptMutation.mutate({ assignmentId, contributions });
@@ -208,14 +246,23 @@ export function OrgRequests() {
     coordMutation.mutate({ assignmentId, coordinator_id, zone_id });
   };
 
+  const { data: orgProfile, isLoading: isProfileLoading } = useOrgProfile();
+  const updateAiPreferenceMutation = useUpdateAiPreference();
+
+  const handleAiPreferenceChange = (mode) => {
+    updateAiPreferenceMutation.mutate(mode);
+  };
+
   const allReqs = Array.isArray(requests) ? requests : [];
   const pendingCount = allReqs.filter(r => r.assignment_status === 'pending').length;
 
-  if (isLoading) return <div className={s.pageTitle} style={{ padding: 40 }}>Loading requests...</div>;
+  if (isLoading || isProfileLoading) return <div className={s.pageTitle} style={{ padding: 40 }}>Loading requests...</div>;
   if (error) return <div style={{ padding: 40, color: '#ef4444' }}>Error: {error.message}</div>;
 
+  const currentPreference = orgProfile?.ai_allocation_preference || 'full';
+
   return (
-    <div style={{ padding: '28px 32px' }}>
+    <div style={{ padding: '28px 32px', position: 'relative' }}>
       <h2 className={s.pageTitleSm} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <span className="material-symbols-outlined" style={{ fontSize: 22, color: 'var(--color-primary)' }}>assignment_ind</span>
         Disaster Requests
@@ -230,6 +277,51 @@ export function OrgRequests() {
       </h2>
       <p className={s.pageDesc}>Review and respond to disaster relief requests from the admin. Accept to commit resources, then assign a coordinator.</p>
 
+      {/* AI Allocation Preference Toggle Banner */}
+      <div style={{
+        marginTop: 20, marginBottom: 24, padding: 16, borderRadius: 12,
+        background: '#f8fafc', border: '1px solid #e2e8f0', display: 'flex',
+        alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16
+      }}>
+        <div>
+          <h4 style={{ margin: 0, fontSize: 14, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#8b5cf6' }}>smart_toy</span>
+            AI Auto-Allocation Preference
+          </h4>
+          <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748b' }}>
+            Set how the AI Orchestrator should allocate your resources when automated requests arrive.
+          </p>
+        </div>
+        
+        <div style={{ display: 'flex', background: '#e2e8f0', padding: 4, borderRadius: 8, gap: 4 }}>
+          {[
+            { id: 'full', label: 'Send All', icon: 'done_all' },
+            { id: 'partial', label: 'Send Partial', icon: 'pie_chart' },
+            { id: 'none', label: 'No Send', icon: 'block' }
+          ].map(opt => (
+            <button
+              key={opt.id}
+              onClick={() => handleAiPreferenceChange(opt.id)}
+              disabled={updateAiPreferenceMutation.isPending}
+              style={{
+                padding: '8px 16px', borderRadius: 6, border: 'none',
+                background: currentPreference === opt.id ? '#fff' : 'transparent',
+                color: currentPreference === opt.id ? '#0f172a' : '#64748b',
+                fontWeight: currentPreference === opt.id ? 700 : 600,
+                fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+                boxShadow: currentPreference === opt.id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                transition: 'all 0.2s'
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 16, color: currentPreference === opt.id ? '#8b5cf6' : 'inherit' }}>
+                {opt.icon}
+              </span>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {allReqs.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 60, color: 'var(--color-text-muted)' }}>
           <span className="material-symbols-outlined" style={{ fontSize: 40, opacity: 0.3 }}>inbox</span>
@@ -242,6 +334,121 @@ export function OrgRequests() {
             acceptMutation={acceptMutation} rejectMutation={rejectMutation}
           />
         ))
+      )}
+
+      {/* AI Agent Allocation Tracker (Organization Side) */}
+      {agentProgress && (
+        <div style={{
+          position: 'fixed', top: 32, right: 32, width: 380, zIndex: 9999,
+          background: '#fff', borderRadius: 16, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)',
+          border: '1px solid #e2e8f0', overflow: 'hidden',
+          animation: 'orgAgentSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+        }}>
+          {/* Header */}
+          <div style={{
+            padding: '14px 20px',
+            background: agentProgress.stage === 'COMPLETED' ? '#f0fdf4' : agentProgress.stage === 'EXHAUSTED' ? '#fffbeb' : '#f8fafc',
+            borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: '50%',
+                background: agentProgress.stage === 'COMPLETED' ? '#10b981' : agentProgress.stage === 'EXHAUSTED' ? '#f59e0b' : '#8b5cf6',
+                color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+                  {agentProgress.stage === 'COMPLETED' ? 'verified' : agentProgress.stage === 'EXHAUSTED' ? 'warning' : 'smart_toy'}
+                </span>
+              </div>
+              <div>
+                <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#1e293b' }}>
+                  {agentProgress.stage === 'COMPLETED' ? 'Allocation Complete' : agentProgress.stage === 'EXHAUSTED' ? 'Partially Fulfilled' : 'AI Allocation Agent'}
+                </h4>
+                <p style={{ margin: 0, fontSize: 12, color: '#64748b' }}>
+                  {agentProgress.stage === 'COMPLETED' || agentProgress.stage === 'EXHAUSTED' ? 'Sequence finished' : 'Automating resource allocation...'}
+                </p>
+              </div>
+            </div>
+            <button onClick={() => { setAgentProgress(null); setAllocationHistory([]); }} style={{
+              background: 'transparent', border: 'none', cursor: 'pointer', color: '#94a3b8',
+              padding: 4, borderRadius: 6, display: 'flex'
+            }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+            </button>
+          </div>
+          
+          <div style={{ padding: 16, maxHeight: 380, overflowY: 'auto' }}>
+            {/* Live Status */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, padding: '10px 12px', borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+              {agentProgress.stage === 'PROCESSING' || agentProgress.stage === 'ACTIVE' ? (
+                <div style={{ width: 14, height: 14, border: '2px solid #8b5cf6', borderTopColor: 'transparent', borderRadius: '50%', animation: 'orgAgentSpin 1s linear infinite', flexShrink: 0 }} />
+              ) : agentProgress.stage === 'COMPLETED' ? (
+                <span className="material-symbols-outlined" style={{ color: '#10b981', fontSize: 18, flexShrink: 0 }}>check_circle</span>
+              ) : agentProgress.stage === 'EXHAUSTED' ? (
+                <span className="material-symbols-outlined" style={{ color: '#f59e0b', fontSize: 18, flexShrink: 0 }}>info</span>
+              ) : (
+                <span className="material-symbols-outlined" style={{ color: '#10b981', fontSize: 18, flexShrink: 0 }}>check_circle</span>
+              )}
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>{agentProgress.message}</span>
+            </div>
+
+            {/* Current Allocation Details */}
+            {agentProgress.contributions && agentProgress.contributions.length > 0 && agentProgress.stage === 'ALLOCATED' && (
+              <div style={{ background: '#f0fdf4', borderRadius: 10, padding: 12, marginBottom: 16, border: '1px solid #bbf7d0' }}>
+                <h5 style={{ margin: '0 0 8px', fontSize: 11, textTransform: 'uppercase', color: '#15803d', letterSpacing: 0.5 }}>Resources Allocated to Your Org</h5>
+                {agentProgress.contributions.map((c, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: i !== agentProgress.contributions.length - 1 ? 6 : 0 }}>
+                    <span style={{ color: '#475569', fontWeight: 600 }}>{c.resource_type}</span>
+                    <span style={{ color: '#10b981', fontWeight: 700 }}>+{c.quantity}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Allocation History (persistent log of all events) */}
+            {allocationHistory.length > 0 && (
+              <div>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 }}>Allocation Log</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                  {allocationHistory.map((entry, i) => (
+                    <div key={i} style={{
+                      padding: 10, borderRadius: 8,
+                      background: entry.stage === 'SKIPPED' ? '#f1f5f9' : '#f0fdf4',
+                      border: `1px solid ${entry.stage === 'SKIPPED' ? '#e2e8f0' : '#bbf7d0'}`
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#334155' }}>{entry.org_name}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontSize: 10, color: '#94a3b8' }}>{entry.timestamp}</span>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: entry.stage === 'SKIPPED' ? '#64748b' : '#15803d', padding: '1px 6px', borderRadius: 4, background: entry.stage === 'SKIPPED' ? '#e2e8f0' : '#dcfce7' }}>
+                            {entry.stage}
+                          </span>
+                        </div>
+                      </div>
+                      {entry.contributions && entry.contributions.length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                          {entry.contributions.map((c, j) => (
+                            <span key={j} style={{ fontSize: 10, background: '#dcfce7', color: '#166534', padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>
+                              {c.quantity}x {c.resource_type}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <style dangerouslySetInnerHTML={{ __html: `
+            @keyframes orgAgentSlideIn {
+              from { transform: translateX(100%); opacity: 0; }
+              to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes orgAgentSpin { 100% { transform: rotate(360deg); } }
+          `}} />
+        </div>
       )}
     </div>
   );
