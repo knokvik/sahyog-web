@@ -13,6 +13,7 @@ const navItems = [
   { to: '/org/resources', label: 'Resources', icon: 'inventory_2' },
   { to: '/org/tasks', label: 'Tasks', icon: 'task_alt' },
   { to: '/org/zones', label: 'Zones', icon: 'map' },
+  { to: '/org/activity-log', label: 'Activity Log', icon: 'history' },
   { to: '/org/profile', label: 'Profile', icon: 'apartment' },
 ];
 

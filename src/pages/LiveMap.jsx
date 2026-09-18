@@ -50,26 +50,27 @@ function extractAlertCoords(alert) {
 
 function MapRecenter({ target }) {
     const map = useMap();
-    const lastTargetRef = useRef(null);
+    const lastTargetRef = useRef(target ? `${Number(target.lat).toFixed(4)}_${Number(target.lng).toFixed(4)}_${target.zoom || 15}` : 'empty');
+    const isInitialMount = useRef(true);
 
     useEffect(() => {
         // Ensure tiles and canvas layers align immediately without layout lag
         map.invalidateSize();
+        isInitialMount.current = false;
     }, [map]);
 
     useEffect(() => {
         if (target && isValidCoord(target.lat, target.lng)) {
             const key = `${Number(target.lat).toFixed(4)}_${Number(target.lng).toFixed(4)}_${target.zoom || 15}`;
             if (lastTargetRef.current !== key) {
-                const isFirst = lastTargetRef.current === null;
                 lastTargetRef.current = key;
-                if (isFirst) {
+                if (isInitialMount.current) {
                     // Settle immediately on open without shifting or floating pins
                     map.setView([target.lat, target.lng], target.zoom || 15, { animate: false });
                 } else {
                     map.flyTo([target.lat, target.lng], target.zoom || 15, {
                         animate: true,
-                        duration: 1.2,
+                        duration: 1.5,
                     });
                 }
             }
