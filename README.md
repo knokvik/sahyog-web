@@ -1,4 +1,8 @@
-**Sahyog coordinator desk**
+<p align="center">
+  <img src="assets/sahyog-logo.png" alt="Sahyog" width="96" />
+</p>
+
+<p align="center"><strong>Sahyog Web</strong></p>
 
 This is the website coordinators, volunteers, and NGOs open in a browser. It is the shared picture: alerts, a map, relief zones, and the organization portal.
 
